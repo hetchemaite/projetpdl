@@ -27,7 +27,7 @@
   </div>
 
 
-  <img v-for="image in allImages" :key="image" :src="image" :alt="pou" />
+  <img v-for="image in allImages" :key="image" :src="image" :alt="pout" />
 
   <!-- <div class="memebox">
     <div class="meme" v-for="image in allImages" :key="image" >
