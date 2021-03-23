@@ -19,7 +19,7 @@
       <label>File
         <input type="file" id="file" ref="file" v-on:change="handleFileUpload()" />
       </label>
-        <button v-on:click="submitFile(),getImages()">Submit</button>
+        <button v-on:click="submitFile()">Submit</button>
     </div>
   </div>
   <div class= "galery">
@@ -104,9 +104,6 @@ export default {
     Promise.all(promises).then(
         (result) => {
           this.allImages = result
-          //alert(this.allImages[0])
-          //alert(this.allImages[1])
-          //alert(this.allImages[2])
         }
       ).catch(
         (error) =>{
@@ -114,7 +111,7 @@ export default {
           this.errors.push(error)
         }
       ).finally(
-        () => alert("pouet")
+        //() => alert("pouet")
       )
     },
 
@@ -164,7 +161,8 @@ export default {
               'Content-Type': 'multipart/form-data'
           }
         }
-      ).then(function(){
+      ).then(() => {
+        this.getImages()
         console.log('SUCCESS!!');
       })
       .catch(function(){
