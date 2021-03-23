@@ -26,12 +26,15 @@
     <button v-on:click="gallery()">Afficher/Mettre à jour la gallerie d'Images</button>
   </div>
 
-  <div class="memebox">
-    <div class="meme" v-for="(image, index) in listImages" :key="image" :index="index">
-      <img :id="'image'+index" >
+
+  <img v-for="image in allImages" :key="image" :src="image" :alt="pou" />
+
+  <!-- <div class="memebox">
+    <div class="meme" v-for="image in allImages" :key="image" >
+      <img src=image alt=image>
     </div>
   </div>
-   
+   -->
 </div>
 
 
@@ -67,26 +70,52 @@ export default {
   methods: {
     gallery() {
       this.allImages=[];
+      let promises = [];
 
-      for(let i = 0 ; i < this.listImages.length ; i++) {
-        axios.get('images/' +i , {responseType: "blob"})
-
+      function asyncGallery (i) {
+        return new Promise((resolve, reject) => {
+          try {
+            axios.get('images/' + i, {responseType: "blob"})
               .then((galeryImage) => {
                 var reader = new window.FileReader();
                 reader.readAsDataURL(galeryImage.data);
-                //this.allImages[i] = ("pouet")
-                //alert("pouet")
-                alert("0")
-                reader.readAsDataURL(galeryImage.data);
                 reader.onload = () => {
-                  alert(reader.result)
-                  document.getElementById("image"+i).setAttribute("src", reader.result);
+                  resolve(reader.result)
                 }
               })
               .catch((e) => {
                 this.errors.push(e);
               })
-     }
+
+          } catch(e) {
+            reject()
+          }
+        })
+      }
+
+
+     
+
+    for(let i = 0 ; i < this.listImages.length ; i++) {
+        promises.push(asyncGallery(i))
+        //alert(promises)
+    }
+
+    Promise.all(promises).then(
+        (result) => {
+          this.allImages = result
+          //alert(this.allImages[0])
+          //alert(this.allImages[1])
+          //alert(this.allImages[2])
+        }
+      ).catch(
+        (error) =>{
+          alert(error)
+          this.errors.push(error)
+        }
+      ).finally(
+        () => alert("pouet")
+      )
     },
 
     getImages() {
@@ -96,8 +125,6 @@ export default {
         .then((listImage) => {
           // JSON responses are automatically parsed.
           this.listImages = listImage.data
-          //alert("fin getImage")
-          //return this.listImages;
         })
         .catch((e) => {
           this.errors.push(e);
@@ -112,6 +139,7 @@ export default {
               var reader = new window.FileReader();
               reader.readAsDataURL(dldImage.data);
               reader.onload = function() {
+                alert(reader.result)
                 document.getElementById("imagedld").setAttribute("src", reader.result);
 
               }
