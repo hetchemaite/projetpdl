@@ -23,13 +23,17 @@
     </div>
   </div>
 
-  <button v-on:click="prout()">Afficher/Mettre à jour la gallerie d'Images</button>
   <div class= "galery">
-    <img class= "imggal" src="" alt="pouet" id = "galleryCenter" />
-
+    <p><i class="arrow right" v-on:click="right()" ></i>
+    <img src="" alt="pouet" id = "galleryCenter" />
+    <i class="arrow left" v-on:click="left()"></i></p>
+   
+    
+    
   </div>
 
-  
+  <button v-on:click="prout()">Afficher/Mettre à jour la gallerie d'Images</button>
+
 
 
 
@@ -63,19 +67,32 @@ export default {
     return {
       selected: '',
       listImages: [],
-      pouet:1,
+      galleryActual:0,
       file: '',
       dldImage: "blob",
       galeryImage: "blob",
       allImages:[],
       errors: [],
+      
     };
   },
 
 
   methods: {
-    prout() {
-      document.getElementById("galleryCenter").setAttribute("src", this.allImages[this.allImages.length-1]);
+
+    left() {
+      if (this.galleryActual > 0) {
+        this.galleryActual--;
+      }
+      alert(this.galleryActual)
+      document.getElementById("galleryCenter").setAttribute("src", this.allImages[this.galleryActual]);
+    },
+    right() {
+      if (this.galleryActual < this.allImages.length-1) {
+        this.galleryActual++;
+      }
+      alert(this.galleryActual)
+      document.getElementById("galleryCenter").setAttribute("src", this.allImages[this.galleryActual]);
     },
     gallery() {
       this.allImages=[];
@@ -220,14 +237,37 @@ img {
   width:50%;
   margin-left: auto;
   margin-right: auto;
-
   background-color: coral;
+  bottom: 20px;
 }
-.imggal {
-  position:relative;
+#galleryCenter {
   max-height: 500px;
   height:auto;
   width:auto;
+}
+
+.arrow {
+  border: solid black;
+  border-width: 0 3px 3px 0;
+  padding: 10px;
+}
+
+.right {
+  position:absolute;
+  top:50%;
+  right:-10%;
+  float:right;
+  transform: rotate(-45deg);
+  -webkit-transform: rotate(-45deg);
+}
+
+.left {
+  position:absolute;
+  top:50%;
+  left:-10%;
+  float:left;
+  transform: rotate(135deg);
+  -webkit-transform: rotate(135deg);
 }
 
 
