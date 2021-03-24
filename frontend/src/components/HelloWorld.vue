@@ -22,12 +22,18 @@
         <button v-on:click="submitFile()">Submit</button>
     </div>
   </div>
+
+  <button v-on:click="prout()">Afficher/Mettre à jour la gallerie d'Images</button>
   <div class= "galery">
-    <button v-on:click="gallery()">Afficher/Mettre à jour la gallerie d'Images</button>
+    <img class= "imggal" src="" alt="pouet" id = "galleryCenter" />
+
   </div>
 
+  
 
-  <img v-for="image in allImages" :key="image" :src="image" :alt="pout" />
+
+
+   <!-- <img v-for="image in allImages" :key="image" :src="image" :alt="pout" /> -->
 
   <!-- <div class="memebox">
     <div class="meme" v-for="image in allImages" :key="image" >
@@ -68,6 +74,9 @@ export default {
 
 
   methods: {
+    prout() {
+      document.getElementById("galleryCenter").setAttribute("src", this.allImages[this.allImages.length-1]);
+    },
     gallery() {
       this.allImages=[];
       let promises = [];
@@ -92,9 +101,6 @@ export default {
           }
         })
       }
-
-
-     
 
     for(let i = 0 ; i < this.listImages.length ; i++) {
         promises.push(asyncGallery(i))
@@ -122,6 +128,7 @@ export default {
         .then((listImage) => {
           // JSON responses are automatically parsed.
           this.listImages = listImage.data
+          this.gallery()
         })
         .catch((e) => {
           this.errors.push(e);
@@ -202,6 +209,29 @@ li {
 a {
   color: #42b983;
 }
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+.galery{
+  position:relative;
+  top:15px;
+  width:50%;
+  margin-left: auto;
+  margin-right: auto;
+
+  background-color: coral;
+}
+.imggal {
+  position:relative;
+  max-height: 500px;
+  height:auto;
+  width:auto;
+}
+
+
+
 </style>
 
 
