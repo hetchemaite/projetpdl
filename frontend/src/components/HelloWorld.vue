@@ -31,7 +31,7 @@
 
 
   <div class="test">
-   <img class="vignettes" v-for="image in allImages" :key="image" :src="image" :alt="pout" />
+   <img class="vignettes" v-for="(image,index) in allImages" :value="index" :key="image" :src="image" :alt="pout" v-on:click="choose(image,index)" />
   </div>
   <!-- <div class="memebox">
     <div class="meme" v-for="image in allImages" :key="image" >
@@ -87,6 +87,10 @@ export default {
       }
       alert(this.galleryActual)
       document.getElementById("galleryCenter").setAttribute("src", this.allImages[this.galleryActual]);
+    },
+    choose(image,index){
+      alert(index);
+      document.getElementById("galleryCenter").setAttribute("src", image);
     },
     gallery() {
       this.allImages=[];
