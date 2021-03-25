@@ -53,6 +53,7 @@ public class ImageController {
 
   @RequestMapping(value = "/images/{id}", method = RequestMethod.DELETE)
   public ResponseEntity<?> deleteImage(@PathVariable("id") long id) {
+    System.out.println(id);
     imageDao.delete(imageDao.retrieve(id).get());
     return new ResponseEntity<>(HttpStatus.OK);
   }
@@ -74,8 +75,17 @@ public class ImageController {
   @ResponseBody
   public ArrayNode getImageList() {
     ArrayNode nodes = mapper.createArrayNode();
+    ObjectNode objectNode = mapper.createObjectNode();
     List<Image> imgs = imageDao.retrieveAll();
-    imgs.forEach(img -> nodes.insert((int) img.getId(),img.getName()));
+    System.out.println(imgs);
+    imgs.forEach(image -> {
+      /*objectNode.put("id", image.getId());
+      System.out.println(image.getId());
+      objectNode.put("name", image.getName());*/
+      nodes.addObject().put("id", image.getId()).put("name", image.getName());
+    });
+
+    System.out.println(nodes);
     return nodes;
   }
 

@@ -5,7 +5,7 @@
 
     <select @change="downloadSelectedImage(selected)" v-model="selected" >
       <option  v-for="(image, index) in listImages" :value ="index" :key="image"> 
-        {{ image }}
+        {{ image.name }}
       </option>
     </select>
 
@@ -23,9 +23,12 @@
     </div>
   </div>
 
+  <button v-on:click="removeImage()">SUPPRIMER CETTE IMAGE NULLE</button>
+
+
   <div class= "galery">
     <p><i class="arrow right" v-on:click="right()" ></i>
-    <img src="http://localhost:8089/images/0" alt="pas d'image chargée" id = "galleryCenter" v-on:click="removeImage()"/>
+    <img src="" alt="pas d'image chargée" id = "galleryCenter" v-on:click="removeImage()"/>
     <i class="arrow left" v-on:click="left()"></i></p>
   </div>
 
@@ -61,13 +64,13 @@ export default {
     return {
       selected: '',
       listImages: [],
-      galleryActual:0,
+      galleryActual:1,
       file: '',
       dldImage: "blob",
       galeryImage: "blob",
       allImages:[],
       errors: [],
-      
+      pixel: 5,
     };
   },
 
@@ -115,8 +118,8 @@ export default {
         })
       }
 
-    for(let i = 0 ; i < this.listImages.length ; i++) {
-        promises.push(asyncGallery(i))
+    for(let i of this.listImages) {
+        promises.push(asyncGallery(i.id))
         //alert(promises)
     }
 
@@ -134,14 +137,28 @@ export default {
       )
     },
 
+
+/*
+    changerImage() {
+        document.getElementById("galleryCenter").setAttribute("src", this.allImages[this.galleryActual-1])
+    },*/
+
+
+
+
     removeImage() {
       axios
-      .delete('images/'+ this.galleryActual,{ data: { answer: 42 } })
+      .delete('images/'+ this.listImages[this.galleryActual].id,{ data: { answer: 42 } })
 
       .then(() => {
         this.getImages()
-        alert()
+        if (this.galleryActual > 0) {
+          this.galleryActual--
+        } else if ( this.galleryActual < this.allImages.length) {
+          this.galleryActual++
+        }
         document.getElementById("galleryCenter").setAttribute("src", this.allImages[this.galleryActual])
+
       })
         
       .catch((e) => {
@@ -156,8 +173,10 @@ export default {
         .get(`images`)
         .then((listImage) => {
           // JSON responses are automatically parsed.
+          alert(listImage.data[0])
           this.listImages = listImage.data
           this.gallery()
+          
         })
         .catch((e) => {
           this.errors.push(e);
@@ -206,6 +225,8 @@ export default {
       });
     }
   },
+
+ 
 
 
   mounted() {
