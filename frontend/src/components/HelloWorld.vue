@@ -25,20 +25,14 @@
 
   <div class= "galery">
     <p><i class="arrow right" v-on:click="right()" ></i>
-    <img src="" alt="pouet" id = "galleryCenter" />
+    <img src="http://localhost:8089/images/0" alt="pas d'image chargée" id = "galleryCenter" />
     <i class="arrow left" v-on:click="left()"></i></p>
-   
-    
-    
   </div>
 
-  <button v-on:click="prout()">Afficher/Mettre à jour la gallerie d'Images</button>
 
-
-
-
-   <!-- <img v-for="image in allImages" :key="image" :src="image" :alt="pout" /> -->
-
+  <div class="test">
+   <img class="vignettes" v-for="image in allImages" :key="image" :src="image" :alt="pout" />
+  </div>
   <!-- <div class="memebox">
     <div class="meme" v-for="image in allImages" :key="image" >
       <img src=image alt=image>
@@ -134,7 +128,7 @@ export default {
           this.errors.push(error)
         }
       ).finally(
-        //() => alert("pouet")
+        //alert("yo")
       )
     },
 
@@ -237,7 +231,7 @@ img {
   width:50%;
   margin-left: auto;
   margin-right: auto;
-  background-color: coral;
+  background-color: black;
   bottom: 20px;
 }
 #galleryCenter {
@@ -250,6 +244,10 @@ img {
   border: solid black;
   border-width: 0 3px 3px 0;
   padding: 10px;
+}
+.arrow:hover{
+  border : solid rgb(43, 180, 226);
+  border-width: 0 3px 3px 0;
 }
 
 .right {
@@ -269,7 +267,19 @@ img {
   transform: rotate(135deg);
   -webkit-transform: rotate(135deg);
 }
-
+.test{
+  width: auto;
+  margin-left: auto;
+  margin-right: auto;
+  background-color: blue;
+}
+.vignettes{
+  max-height: 5%;
+  max-width:5%;
+  width:auto;
+  height:auto;
+  border:3px solid blue;
+}
 
 
 </style>
