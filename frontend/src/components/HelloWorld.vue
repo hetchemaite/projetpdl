@@ -25,13 +25,13 @@
 
   <div class= "galery">
     <p><i class="arrow right" v-on:click="right()" ></i>
-    <img src="http://localhost:8089/images/0" alt="pas d'image chargée" id = "galleryCenter" />
+    <img src="http://localhost:8089/images/0" alt="pas d'image chargée" id = "galleryCenter" v-on:click="removeImage()"/>
     <i class="arrow left" v-on:click="left()"></i></p>
   </div>
 
 
   <div class="test">
-   <img class="vignettes" v-for="(image,index) in allImages" :value="index" :key="image" :src="image" :alt="pout" v-on:click="choose(image,index)" />
+   <img class="vignettes" v-for="(image,index) in allImages" :value="index" :key="image" :src="image" :alt="pout" v-on:click="choose(index)" />
   </div>
   <!-- <div class="memebox">
     <div class="meme" v-for="image in allImages" :key="image" >
@@ -78,19 +78,17 @@ export default {
       if (this.galleryActual > 0) {
         this.galleryActual--;
       }
-      alert(this.galleryActual)
       document.getElementById("galleryCenter").setAttribute("src", this.allImages[this.galleryActual]);
     },
     right() {
       if (this.galleryActual < this.allImages.length-1) {
         this.galleryActual++;
       }
-      alert(this.galleryActual)
       document.getElementById("galleryCenter").setAttribute("src", this.allImages[this.galleryActual]);
     },
-    choose(image,index){
-      alert(index);
-      document.getElementById("galleryCenter").setAttribute("src", image);
+    choose(index){
+      this.galleryActual = index
+      document.getElementById("galleryCenter").setAttribute("src", this.allImages[this.galleryActual]);
     },
     gallery() {
       this.allImages=[];
@@ -134,6 +132,22 @@ export default {
       ).finally(
         //alert("yo")
       )
+    },
+
+    removeImage() {
+      axios
+      .delete('images/'+ this.galleryActual,{ data: { answer: 42 } })
+
+      .then(() => {
+        this.getImages()
+        alert()
+        document.getElementById("galleryCenter").setAttribute("src", this.allImages[this.galleryActual])
+      })
+        
+      .catch((e) => {
+        alert(e)
+        this.errors.push(e)
+      })
     },
 
     getImages() {
@@ -235,7 +249,6 @@ img {
   width:50%;
   margin-left: auto;
   margin-right: auto;
-  background-color: black;
   bottom: 20px;
 }
 #galleryCenter {
@@ -256,7 +269,7 @@ img {
 
 .right {
   position:absolute;
-  top:50%;
+  top:45%;
   right:-10%;
   float:right;
   transform: rotate(-45deg);
@@ -265,20 +278,22 @@ img {
 
 .left {
   position:absolute;
-  top:50%;
+  top:45%;
   left:-10%;
   float:left;
   transform: rotate(135deg);
   -webkit-transform: rotate(135deg);
 }
 .test{
+  margin-top:45px;
   width: auto;
   margin-left: auto;
   margin-right: auto;
   background-color: blue;
 }
 .vignettes{
-  max-height: 5%;
+  
+  max-height: 50px;
   max-width:5%;
   width:auto;
   height:auto;
