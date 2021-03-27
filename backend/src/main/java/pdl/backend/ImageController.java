@@ -6,11 +6,17 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 
+import javax.imageio.ImageIO;
+
+import java.awt.image.BufferedImage;
+
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -49,7 +55,7 @@ public class ImageController {
                 .ok()
                 .contentType(MediaType.IMAGE_JPEG)
                 .body(imgFile.get().getData());
-  } 
+  }
 
   @RequestMapping(value = "/images/{id}", method = RequestMethod.DELETE)
   public ResponseEntity<?> deleteImage(@PathVariable("id") long id) {
@@ -62,7 +68,11 @@ public class ImageController {
   public ResponseEntity<?> addImage(@RequestParam("file") MultipartFile file,
       RedirectAttributes redirectAttributes) {
       try {
-        Image img = new Image(file.getOriginalFilename(), file.getBytes());
+        final ClassPathResource imgFile = new ClassPathResource(file.getOriginalFilename());
+        BufferedImage buffImg = ImageIO.read(imgFile.getFile());
+        long[] filedims = {(long) buffImg.getWidth(),(long) buffImg.getHeight()};
+        Image img = new Image(file.getOriginalFilename(), file.getBytes(),filedims,new org.springframework.http.MediaType(file.getContentType().substring(6)));
+        System.out.println(file.getContentType());
         System.out.println(file.getOriginalFilename());
         imageDao.create(img);
       } catch (final IOException e) {
@@ -75,8 +85,7 @@ public class ImageController {
   @ResponseBody
   public ArrayNode getImageList() {
     ArrayNode nodes = mapper.createArrayNode();
-    ObjectNode objectNode = mapper.createObjectNode();
-    List<Image> imgs = imageDao.retrieveAll();
+       List<Image> imgs = imageDao.retrieveAll();
     System.out.println(imgs);
     imgs.forEach(image -> {
       /*objectNode.put("id", image.getId());
@@ -88,3 +97,4 @@ public class ImageController {
     System.out.println(nodes);
     return nodes;
   }
+}

@@ -43,7 +43,7 @@ public class ImageDao implements Dao<Image> {
     try {
       BufferedImage buffImg = ImageIO.read(imgFile.getFile());
 
-      long[] filedims = {buffImg.getWidth(),buffImg.getHeight()};
+      long[] filedims = {(long) buffImg.getWidth(),(long) buffImg.getHeight()};
 
       fileContent = Files.readAllBytes(imgFile.getFile().toPath());
       //filetype = new org.springframework.http.MediaType(Files.probeContentType(imgFile.getFile().toPath()));
@@ -75,6 +75,7 @@ public class ImageDao implements Dao<Image> {
 
   @Override
   public void create(final Image img) {
+
     images.put(img.getId(), img);
   }
 
