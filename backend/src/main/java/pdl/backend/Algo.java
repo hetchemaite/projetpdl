@@ -1,6 +1,7 @@
 package pdl.backend;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.array.ArrayImgs;
@@ -84,10 +85,8 @@ public class Algo {
 			final UnsignedByteType valR = cR.get();
 			final UnsignedByteType valG = cG.get();
 			final UnsignedByteType valB = cB.get();
-			rgbToHsv(valR.get(),valG.get(),ValB.get(),hsv);
-			h.add(hsv[0]);
-			v.add(hsv[2]);
-			histogramme[hsv[1]]++;
+			rgbToHsv(valR.get(),valG.get(),valB.get(),hsv);
+			histogramme[(int) hsv[1]]++;
 		}
 		for(int i=0; i<256; i++){
 			if(i==0){
@@ -104,8 +103,8 @@ public class Algo {
 			final UnsignedByteType valR = cR.get();
 			final UnsignedByteType valG = cG.get();
 			final UnsignedByteType valB = cB.get();
-			rgbToHsv(valR.get(),valG.get(),ValB.get(),hsv);
-			int s=(histogrammeCumule[hsv[1]]*255/histogrammeCumule[255]);
+			rgbToHsv(valR.get(),valG.get(),valB.get(),hsv);
+			int s=(histogrammeCumule[(int) hsv[1]]*255/histogrammeCumule[255]);
 			
 			hsvToRgb(hsv[0],s,hsv[2],rgb);
 			valR.set(rgb[0]);
@@ -131,7 +130,7 @@ public class Algo {
 			final UnsignedByteType valR = cR.get();
 			final UnsignedByteType valG = cG.get();
 			final UnsignedByteType valB = cB.get();
-			rgbToHsv(valR.get(),valG.get(),ValB.get(),hsv);			
+			rgbToHsv(valR.get(),valG.get(),valB.get(),hsv);			
 			hsvToRgb(teinte, hsv[1],hsv[2],rgb);
 			valR.set(rgb[0]);
 			valG.set(rgb[1]);
@@ -170,25 +169,35 @@ public class Algo {
 		float l = v * (1-s);
 		float m = v * (1-f*s);
 		float n = v * (1 -(1-f)*s);
-		if(hi=0){
-			int[] myArray={v,n,l};
+		int l_int = (int) l;
+		int m_int = (int) m;
+		int n_int = (int) n;
+		if(hi==0){
+			int[] myArray={(int)v,n_int,l_int};
+			rgb=myArray;
 		}
-		if(hi=1){
-			int[] myArray={m,v,l};
+		if(hi==1){
+			int[] myArray={m_int,(int)v,l_int};
+			rgb=myArray;
 		}
-		if(hi=2){
-			int[] myArray={l,v,n};
+		if(hi==2){
+			int[] myArray={l_int,(int)v,n_int};
+			rgb=myArray;
 		}
-		if(hi=3){
-			int[] myArray={l,m,v};
+		if(hi==3){
+			int[] myArray={l_int,m_int,(int)v};
+			rgb=myArray;
 		}
-		if(hi=4){
-			int[] myArray={n,l,v};
+		if(hi==4){
+			int[] myArray={n_int,l_int,(int)v};
+			rgb=myArray;
 		}
-		if(hi=5){
-			int[] myArray={v,l,m};
+		if(hi==5){
+			int[] myArray={(int) v,l_int,m_int};
+			rgb=myArray;
+	
 		}
-		rgb=myArray;
+
 	}
 
 	public static void meanFilter(final Img<UnsignedByteType> input, final Img<UnsignedByteType> output, int size) {
@@ -211,9 +220,10 @@ public class Algo {
 					double vB=0;
 					int i=0;
 					RandomAccessibleInterval< UnsignedByteType > convolution = Views.interval( expandedView, new long[] { x-size/2, y-size/2 }, new long[]{ x+size/2, y+size/2} );
-					final IntervalView<UnsignedByteType> inputR = Views.hyperSlice(Views.iterable(convolution), 2, 0);
-					final IntervalView<UnsignedByteType> inputG = Views.hyperSlice(Views.iterable(convolution), 2, 1);
-					final IntervalView<UnsignedByteType> inputB = Views.hyperSlice(Views.iterable(convolution), 2, 2);
+
+					final IntervalView<UnsignedByteType> inputR = Views.hyperSlice(convolution, 2, 0);
+					final IntervalView<UnsignedByteType> inputG = Views.hyperSlice(convolution, 2, 1);
+					final IntervalView<UnsignedByteType> inputB = Views.hyperSlice(convolution, 2, 2);
 					final Cursor<UnsignedByteType> cR = inputR.cursor();
 					final Cursor<UnsignedByteType> cG = inputG.cursor();
 					final Cursor<UnsignedByteType> cB = inputB.cursor();
