@@ -30,6 +30,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import io.scif.FormatException;
+
 @RestController
 public class ImageController {
 
@@ -44,18 +46,53 @@ public class ImageController {
   }
 
   @RequestMapping(value = "/images/{id}", method = RequestMethod.GET, produces = MediaType.IMAGE_JPEG_VALUE)
+  public ResponseEntity<?> getImageAlgo(@PathVariable long id,
+                                        @RequestParam(name="algorithm", required = false) String algorithm,
+                                        @RequestParam(name="p1", required = false) String p1,
+                                        @RequestParam(name="p2", required = false) String p2) throws IOException  {
+    Optional<Image> imgFile = imageDao.retrieve(id);
+
+    if (imgFile.isEmpty()) {
+      System.out.print("YOUHOU");
+      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+    String[] params = {algorithm,p1,p2};
+    if ((p1==null && p2!=null) || (algorithm==null && p1!=null)) {
+      return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    }
+
+
+    if (algorithm != null) {try {
+        imageDao.update(imgFile.get(),params);
+
+      } catch(FormatException a) {
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+      } catch(IOException e) {
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+
+    return ResponseEntity
+                .ok()
+                .contentType(MediaType.IMAGE_JPEG)
+                .body(imgFile.get().getData());
+  }
+
+/*
+  @RequestMapping(value = "/images/{id}", method = RequestMethod.GET, produces = MediaType.IMAGE_JPEG_VALUE)
   public ResponseEntity<?> getImage(@PathVariable("id") long id) throws IOException  {
     Optional<Image> imgFile = imageDao.retrieve(id);
     if (imgFile.isEmpty()) {
       System.out.print("YOUHOU");
       return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
-    //System.out.println("oupsi");
+    System.out.println("first get");
     return ResponseEntity
                 .ok()
                 .contentType(MediaType.IMAGE_JPEG)
                 .body(imgFile.get().getData());
   }
+  */
 
   @RequestMapping(value = "/images/{id}", method = RequestMethod.DELETE)
   public ResponseEntity<?> deleteImage(@PathVariable("id") long id) {
@@ -94,7 +131,11 @@ public class ImageController {
       nodes.addObject().put("id", image.getId()).put("name", image.getName());
     });
 
+    
+
     System.out.println(nodes);
     return nodes;
   }
+
+  
 }

@@ -21,6 +21,7 @@ import io.scif.gui.BufferedImageReader;
 import io.scif.img.ImgIOException;
 import io.scif.img.ImgOpener;
 import io.scif.img.ImgSaver;
+import io.scif.img.SCIFIOImgPlus;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.exception.IncompatibleTypeException;
 
@@ -80,14 +81,16 @@ public class ImageDao implements Dao<Image> {
   }
 
   @Override
-  public void update(final Image img, final String[] params) {
+  public void update(final Image img, final String[] params) throws FormatException,IOException {
     try {
-      Img<UnsignedByteType> imgbyte = ImageConverter.imageFromJPEGBytes(img.getData());
-      Algo.light(imgbyte, 25);
+      SCIFIOImgPlus<UnsignedByteType> imgbyte = ImageConverter.imageFromJPEGBytes(img.getData());
+      Algo.increaseLuminosity(imgbyte, 30);
+      byte[] newImage = ImageConverter.imageToJPEGBytes(imgbyte);
+      img.setData(newImage);
     } catch(FormatException a) {
-
+      throw a;
     } catch(IOException e) {
-
+      throw e;
     }
 
   }
@@ -98,29 +101,5 @@ public class ImageDao implements Dao<Image> {
     System.out.println(images.remove(img.getId()));
     System.out.println(images);
   }
-  
-  
-  public static void light(Img<UnsignedByteType> img, int delta) {
-		final RandomAccess<UnsignedByteType> r = img.randomAccess();
-
-		final int iw = (int) img.max(0);
-		final int ih = (int) img.max(1);
-
-		for (int x = 0; x <= iw; ++x) {
-			for (int y = 0; y <= ih; ++y) {
-				r.setPosition(x, 0);
-				r.setPosition(y, 1);
-				final UnsignedByteType val = r.get();
-				if(val.get() + delta > 255) {
-					val.set(255);
-				} else if(val.get()+delta < 0 ) {
-					val.set(0);
-				} else {
-					val.set(val.get()+delta);
-				}
-			}
-		}
-
-	}
 
 }

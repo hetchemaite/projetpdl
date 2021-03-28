@@ -36,6 +36,8 @@
   <div class="test">
    <img class="vignettes" v-for="(image,index) in allImages" :value="index" :key="image" :src="image" :alt="pout" v-on:click="choose(index)" />
   </div>
+
+  <button v-on:click="algo(listImages[galleryActual].id)">light mgl</button>
   <!-- <div class="memebox">
     <div class="meme" v-for="image in allImages" :key="image" >
       <img src=image alt=image>
@@ -176,12 +178,30 @@ export default {
           alert(listImage.data[0])
           this.listImages = listImage.data
           this.gallery()
-          
+
         })
         .catch((e) => {
           this.errors.push(e);
         });
-      
+
+    },
+
+    algo(url) {
+      axios.get('http://localhost:8081/images/' + url+"?algorithm=increaseLuminosity&gain=25", {responseType:"blob"})
+           .then((dldImage) =>  {
+              alert("yoa");
+              var reader = new window.FileReader();
+              reader.readAsDataURL(dldImage.data);
+              reader.onload = function() {
+                alert(reader.result)
+                document.getElementById("galleryCenter").setAttribute("src", reader.result);
+              }
+              this.getImages();
+            })
+            .catch((e) => {
+              alert(e)
+              this.errors.push(e);
+            });
     },
 
     downloadSelectedImage(url) {

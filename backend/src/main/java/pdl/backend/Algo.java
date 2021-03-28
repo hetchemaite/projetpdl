@@ -9,28 +9,54 @@ import io.scif.img.ImgIOException;
 import io.scif.img.ImgOpener;
 import io.scif.img.ImgSaver;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
+import net.imglib2.view.IntervalView;
+import net.imglib2.view.Views;
 import net.imglib2.exception.IncompatibleTypeException;
 
 public class Algo {
 
-    public static void light(Img<UnsignedByteType> img, int delta) {
-		final RandomAccess<UnsignedByteType> r = img.randomAccess();
 
-		final int iw = (int) img.max(0);
-		final int ih = (int) img.max(1);
+    public static void increaseLuminosity(Img<UnsignedByteType> img, int delta) {
+		final IntervalView<UnsignedByteType> inputR = Views.hyperSlice(img, 2, 0);
+        final IntervalView<UnsignedByteType> inputG = Views.hyperSlice(img, 2, 1);
+        final IntervalView<UnsignedByteType> inputB = Views.hyperSlice(img, 2, 2);
 
-		for (int x = 0; x <= iw; ++x) {
-			for (int y = 0; y <= ih; ++y) {
-				r.setPosition(x, 0);
-				r.setPosition(y, 1);
-				final UnsignedByteType val = r.get();
-				if(val.get() + delta > 255) {
-					val.set(255);
-				} else if(val.get()+delta < 0 ) {
-					val.set(0);
-				} else {
-					val.set(val.get()+delta);
-				}
+        final Cursor<UnsignedByteType> cR = inputR.cursor();
+        final Cursor<UnsignedByteType> cG = inputG.cursor();
+        final Cursor<UnsignedByteType> cB = inputB.cursor();
+
+
+		
+		while (cR.hasNext() && cG.hasNext() && cB.hasNext()) {
+			cR.fwd();
+            cG.fwd();
+            cB.fwd();
+
+			final UnsignedByteType valR = cR.get();
+			final UnsignedByteType valG = cG.get();
+			final UnsignedByteType valB = cB.get();
+			if(valR.get() + delta > 255) {
+				valR.set(255);
+			} else if(valR.get()+delta < 0 ) {
+				valR.set(0);
+			} else {
+				valR.set(valR.get()+delta);
+			}
+
+			if(valG.get() + delta > 255) {
+				valG.set(255);
+			} else if(valG.get()+delta < 0 ) {
+				valG.set(0);
+			} else {
+				valG.set(valG.get()+delta);
+			}
+
+			if(valB.get() + delta > 255) {
+				valB.set(255);
+			} else if(valB.get()+delta < 0 ) {
+				valB.set(0);
+			} else {
+				valB.set(valB.get()+delta);
 			}
 		}
 
