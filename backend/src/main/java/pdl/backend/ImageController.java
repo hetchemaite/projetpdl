@@ -48,51 +48,64 @@ public class ImageController {
   @RequestMapping(value = "/images/{id}", method = RequestMethod.GET, produces = MediaType.IMAGE_JPEG_VALUE)
   public ResponseEntity<?> getImageAlgo(@PathVariable long id,
                                         @RequestParam(name="algorithm", required = false) String algorithm,
-                                        @RequestParam(name="p1", required = false) String p1,
-                                        @RequestParam(name="p2", required = false) String p2) throws IOException  {
+                                        @RequestParam(name="gain", required = false) String gain,
+                                        @RequestParam(name="filtersize", required = false) String filtersize,
+                                        @RequestParam(name="teinte", required = false) String teinte,
+                                        @RequestParam(name="filter", required = false) String filter) throws IOException, FormatException, BadArguments  {
     Optional<Image> imgFile = imageDao.retrieve(id);
 
     if (imgFile.isEmpty()) {
       System.out.print("YOUHOU");
       return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
-    String[] params = {algorithm,p1,p2};
-    if ((p1==null && p2!=null) || (algorithm==null && p1!=null)) {
-      return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-    }
+    String[] params = {null,null,null};
 
-
-    if (algorithm != null) {try {
+    if (algorithm != null) {
+      if (gain!=null && filtersize==null && filter == null && teinte==null) {
+        params[0] = algorithm;
+        params[1] = gain;
+      } else if (gain==null && filtersize!=null && filter != null && teinte==null) {
+        params[0] = algorithm;
+        params[1] = filter;
+        params[2] = filtersize;
+      } else if (gain==null && filtersize==null && filter == null && teinte!=null) {
+        params[0] = algorithm;
+        params[1] = teinte;
+      } else if (gain==null && filtersize==null && filter == null && teinte==null) {
+        params[0] = algorithm;
+      } else {
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+      }
+      try {
         imageDao.update(imgFile.get(),params);
 
       } catch(FormatException a) {
         return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
       } catch(IOException e) {
         return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+      } catch(BadArguments message) {
+        return ResponseEntity
+                      .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                      .contentType(MediaType.TEXT_HTML)
+                      .body(message);
       }
+      return ResponseEntity
+              .ok()
+              .contentType(MediaType.IMAGE_JPEG)
+              .body(imgFile.get().getData());
+
+    } else if (gain==null && filtersize==null && filter == null && teinte==null){
+      return ResponseEntity
+                  .ok()
+                  .contentType(MediaType.IMAGE_JPEG)
+                  .body(imgFile.get().getData());
     }
 
-    return ResponseEntity
-                .ok()
-                .contentType(MediaType.IMAGE_JPEG)
-                .body(imgFile.get().getData());
+    return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+
+
   }
 
-/*
-  @RequestMapping(value = "/images/{id}", method = RequestMethod.GET, produces = MediaType.IMAGE_JPEG_VALUE)
-  public ResponseEntity<?> getImage(@PathVariable("id") long id) throws IOException  {
-    Optional<Image> imgFile = imageDao.retrieve(id);
-    if (imgFile.isEmpty()) {
-      System.out.print("YOUHOU");
-      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-    }
-    System.out.println("first get");
-    return ResponseEntity
-                .ok()
-                .contentType(MediaType.IMAGE_JPEG)
-                .body(imgFile.get().getData());
-  }
-  */
 
   @RequestMapping(value = "/images/{id}", method = RequestMethod.DELETE)
   public ResponseEntity<?> deleteImage(@PathVariable("id") long id) {
