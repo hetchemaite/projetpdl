@@ -37,6 +37,28 @@
    <img class="vignettes" v-for="(image,index) in allImages" :value="index" :key="image" :src="image" :alt="pout" v-on:click="choose(index)" />
   </div>
 
+  <div class="algorithms">
+    <select v-model="currentAlgo" alt="Selectionner un algo">
+      <option  v-for="(algo, index) in algos" :value ="index" :key="algo"> 
+        {{ algo.text }}
+      </option>
+    </select>
+    
+    <select v-if="currentAlgo == 3" v-model="filterType" alt="Selectionner un filtre">
+      <option  v-for="(filtre, index) in filtres" :value ="index" :key="filtre"> 
+        {{ filtre.text }}
+      </option>
+    </select>
+
+    <input v-else-if="currentAlgo == 0 " id="gain" placeholder="Gain">
+    <input v-else-if="currentAlgo == 2 " id="gain" placeholder="Teinte (comprise entre 0 et 360)" size = 30>
+
+    <input v-if="currentAlgo == 3" id="param2" placeholder="Niveau de flou">
+
+
+
+  </div>  
+
   <button v-on:click="algo(listImages[galleryActual].id)">light mgl</button>
   <!-- <div class="memebox">
     <div class="meme" v-for="image in allImages" :key="image" >
@@ -73,12 +95,24 @@ export default {
       allImages:[],
       errors: [],
       pixel: 5,
+      algos: [
+        {text :'increaseLuminosity', value : 0},
+        {text :'histogram', value : 1},
+        {text :'coloredFilter', value : 2},
+        {text :'blurryFilter', value : 3},
+        {text :'borderFilter', value : 4},
+      ],
+      currentAlgo:0,
+      filtres: [
+        {text :'gaussien', value : 0},
+        {text :'moyen', value : 1},
+      ],
+      filterType:0
     };
   },
 
 
   methods: {
-
     left() {
       if (this.galleryActual > 0) {
         this.galleryActual--;
@@ -187,7 +221,7 @@ export default {
     },
 
     algo(url) {
-      axios.get('http://localhost:8081/images/' + url+"?algorithm=increaseLuminosity&gain=25", {responseType:"blob"})
+      axios.get('http://localhost:8081/images/' + url+"?algorithm=increaseLuminosity&gain=25&pouet=28", {responseType:"blob"})
            .then((dldImage) =>  {
               alert("yoa");
               var reader = new window.FileReader();
