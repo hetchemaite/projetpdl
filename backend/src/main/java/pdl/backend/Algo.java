@@ -107,18 +107,42 @@ public class Algo {
 			rgbToHsv(valR.get(),valG.get(),ValB.get(),hsv);
 			int s=(histogrammeCumule[hsv[1]]*255/histogrammeCumule[255]);
 			
-			hsvToRgb(hvs[0],s,hsv[2],rgb);
+			hsvToRgb(hsv[0],s,hsv[2],rgb);
 			valR.set(rgb[0]);
 			valG.set(rgb[1]);
 			valB.set(rgb[2]);
 		}
 	}
 
+	public static void Teinte(Img<UnsignedByteType> img, int teinte) {
+		final IntervalView<UnsignedByteType> inputR = Views.hyperSlice(img, 2, 0);
+        final IntervalView<UnsignedByteType> inputG = Views.hyperSlice(img, 2, 1);
+        final IntervalView<UnsignedByteType> inputB = Views.hyperSlice(img, 2, 2);
+        final Cursor<UnsignedByteType> cR = inputR.cursor();
+        final Cursor<UnsignedByteType> cG = inputG.cursor();
+        final Cursor<UnsignedByteType> cB = inputB.cursor();
+
+		float[] hsv={0,0,0};
+		int[] rgb={0,0,0};
+		while(cR.hasNext() && cG.hasNext() && cB.hasNext()){
+			cR.fwd();
+            cG.fwd();
+            cB.fwd();
+			final UnsignedByteType valR = cR.get();
+			final UnsignedByteType valG = cG.get();
+			final UnsignedByteType valB = cB.get();
+			rgbToHsv(valR.get(),valG.get(),ValB.get(),hsv);			
+			hsvToRgb(teinte, hsv[1],hsv[2],rgb);
+			valR.set(rgb[0]);
+			valG.set(rgb[1]);
+			valB.set(rgb[2]);
+		}
+	}
 	
-    void rgbToHsv(int r, int g, int b, float[] hsv){
+    public static  void rgbToHsv(int r, int g, int b, float[] hsv){
 		float h,s,v;
-		int max=max(max(r,g),b);
-		int min=min(min(r,g),b);
+		int max=Math.max(Math.max(r,g),b);
+		int min=Math.min(Math.min(r,g),b);
 		int Maxmin=max-min;
 		if(max==min){
 			h=0;
@@ -140,7 +164,7 @@ public class Algo {
 		hsv[2]=v;
 	}
 
-    void hsvToRgb(float h, float s, float v, int[] rgb){
+    public static void hsvToRgb(float h, float s, float v, int[] rgb){
 		float hi=((int)(h/60)) %6;
 		float f=h/60 -hi;
 		float l = v * (1-s);
@@ -166,5 +190,64 @@ public class Algo {
 		}
 		rgb=myArray;
 	}
+
+	public static void meanFilter(final Img<UnsignedByteType> input, final Img<UnsignedByteType> output, int size) {
+		
+		
+		final IntervalView<UnsignedByteType> expandedView = Views.expandMirrorDouble(input, size/2, size/2 );
+		final RandomAccess<UnsignedByteType> w = output.randomAccess();
+			final int iw = (int) input.max(0);
+			final int ih = (int) input.max(1);
+			final double[][] filter=new double[size][size];
+			for(int a=0; a<size; a++){
+				for(int b=0; b<size; b++){
+					filter[a][b]=1.0/(size*size);
+				}
+			}
+			for (int x = 0; x <= iw-1; ++x) {
+				for (int y = 0; y <= ih-1; ++y) {
+					double vR=0;
+					double vG=0;
+					double vB=0;
+					int i=0;
+					RandomAccessibleInterval< UnsignedByteType > convolution = Views.interval( expandedView, new long[] { x-size/2, y-size/2 }, new long[]{ x+size/2, y+size/2} );
+					final IntervalView<UnsignedByteType> inputR = Views.hyperSlice(Views.iterable(convolution), 2, 0);
+					final IntervalView<UnsignedByteType> inputG = Views.hyperSlice(Views.iterable(convolution), 2, 1);
+					final IntervalView<UnsignedByteType> inputB = Views.hyperSlice(Views.iterable(convolution), 2, 2);
+					final Cursor<UnsignedByteType> cR = inputR.cursor();
+					final Cursor<UnsignedByteType> cG = inputG.cursor();
+					final Cursor<UnsignedByteType> cB = inputB.cursor();
+
+					while(cR.hasNext() && cG.hasNext() && cB.hasNext()){
+						cR.fwd();
+						cG.fwd();
+						cB.fwd();
+						final UnsignedByteType valR = cR.get();
+						final UnsignedByteType valG = cG.get();
+						final UnsignedByteType valB = cB.get();
+						vR=vR+valR.get()*filter[i/size][i%size];
+						vG=vG+valG.get()*filter[i/size][i%size];
+						vB=vB+valB.get()*filter[i/size][i%size];
+						i++;
+					}
+					w.setPosition(x, 0);
+					w.setPosition(y, 1);
+
+					w.setPosition(0, 2);
+					final UnsignedByteType valR2=w.get();
+					valR2.set((int) vR);
+					w.setPosition(1, 2);
+					final UnsignedByteType valG2=w.get();
+					valG2.set((int) vG);
+					w.setPosition(2, 2);
+					final UnsignedByteType valB2=w.get();
+					valB2.set((int) vB);
+
+				}
+			}
+	}
+
+
+
 
 }
