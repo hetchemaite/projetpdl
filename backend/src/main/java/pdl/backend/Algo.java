@@ -5,6 +5,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.array.ArrayImgs;
+import java.awt.Color;
 
 import java.util.List;
 
@@ -85,7 +86,7 @@ public class Algo {
 			final UnsignedByteType valR = cR.get();
 			final UnsignedByteType valG = cG.get();
 			final UnsignedByteType valB = cB.get();
-			rgbToHsv(valR.get(),valG.get(),valB.get(),hsv);
+			Color.RGBtoHSB(valR.get(),valG.get(),valB.get(),hsv);
 			histogramme[(int) hsv[1]]++;
 		}
 		for(int i=0; i<256; i++){
@@ -95,7 +96,7 @@ public class Algo {
 				histogrammeCumule[i]=histogrammeCumule[i-1]+histogramme[i];
 			}
 		}
-		int[] rgb={0,0,0};
+		int rgb;
 		while(cRcopy.hasNext() && cGcopy.hasNext() && cBcopy.hasNext()){
 			cRcopy.fwd();
             cGcopy.fwd();
@@ -103,13 +104,13 @@ public class Algo {
 			final UnsignedByteType valR = cR.get();
 			final UnsignedByteType valG = cG.get();
 			final UnsignedByteType valB = cB.get();
-			rgbToHsv(valR.get(),valG.get(),valB.get(),hsv);
+			Color.RGBtoHSB(valR.get(),valG.get(),valB.get(),hsv);
 			int s=(histogrammeCumule[(int) hsv[1]]*255/histogrammeCumule[255]);
 			
-			hsvToRgb(hsv[0],s,hsv[2],rgb);
-			valR.set(rgb[0]);
-			valG.set(rgb[1]);
-			valB.set(rgb[2]);
+			rgb = Color.HSBtoRGB(hsv[0],s, hsv[2]);
+			valR.set((rgb>>16)&0xFF);
+			valG.set((rgb>>8)&0xFF);
+			valB.set(rgb&0xFF);
 		}
 	}
 
@@ -120,9 +121,9 @@ public class Algo {
         final Cursor<UnsignedByteType> cR = inputR.cursor();
         final Cursor<UnsignedByteType> cG = inputG.cursor();
         final Cursor<UnsignedByteType> cB = inputB.cursor();
-
+		System.out.println(teinte);
 		float[] hsv={0,0,0};
-		int[] rgb={0,0,0};
+		int rgb;
 		while(cR.hasNext() && cG.hasNext() && cB.hasNext()){
 			cR.fwd();
             cG.fwd();
@@ -130,132 +131,108 @@ public class Algo {
 			final UnsignedByteType valR = cR.get();
 			final UnsignedByteType valG = cG.get();
 			final UnsignedByteType valB = cB.get();
-			rgbToHsv(valR.get(),valG.get(),valB.get(),hsv);			
-			hsvToRgb(teinte, hsv[1],hsv[2],rgb);
-			valR.set(rgb[0]);
-			valG.set(rgb[1]);
-			valB.set(rgb[2]);
-		}
-	}
-	
-    public static  void rgbToHsv(int r, int g, int b, float[] hsv){
-		float h,s,v;
-		int max=Math.max(Math.max(r,g),b);
-		int min=Math.min(Math.min(r,g),b);
-		int Maxmin=max-min;
-		if(max==min){
-			h=0;
-		}else if(max==r){
-			h=(60*(g-b)/Maxmin) % 360;
-		}else if(max==g){
-			h=60*(b-r)/Maxmin +120;
-		}else if(max==b){
-			h=60*(r-g)/Maxmin + 240;
-		}
-		if(max==0){
-			s=0;
-		}else{
-			s=1-(min/max);
-		}
-		v=max;
-		hsv[0]=h;
-		hsv[1]=s;
-		hsv[2]=v;
-	}
 
-    public static void hsvToRgb(float h, float s, float v, int[] rgb){
-		float hi=((int)(h/60)) %6;
-		float f=h/60 -hi;
-		float l = v * (1-s);
-		float m = v * (1-f*s);
-		float n = v * (1 -(1-f)*s);
-		int l_int = (int) l;
-		int m_int = (int) m;
-		int n_int = (int) n;
-		if(hi==0){
-			int[] myArray={(int)v,n_int,l_int};
-			rgb=myArray;
-		}
-		if(hi==1){
-			int[] myArray={m_int,(int)v,l_int};
-			rgb=myArray;
-		}
-		if(hi==2){
-			int[] myArray={l_int,(int)v,n_int};
-			rgb=myArray;
-		}
-		if(hi==3){
-			int[] myArray={l_int,m_int,(int)v};
-			rgb=myArray;
-		}
-		if(hi==4){
-			int[] myArray={n_int,l_int,(int)v};
-			rgb=myArray;
-		}
-		if(hi==5){
-			int[] myArray={(int) v,l_int,m_int};
-			rgb=myArray;
-	
+			hsv = Color.RGBtoHSB(valR.get(),valG.get(),valB.get(),null);
+			rgb = Color.HSBtoRGB(teinte/360.0F, hsv[1], hsv[2]);
+			valR.set((rgb>>16)&0xFF);
+			valG.set((rgb>>8)&0xFF);
+			valB.set(rgb&0xFF);
 		}
 
 	}
-
-	public static void meanFilter(final Img<UnsignedByteType> input, final Img<UnsignedByteType> output, int size) {
-		
-		
+	public static void convolution(final Img<UnsignedByteType> input, final Img<UnsignedByteType> output,
+	float[][] kernel) {
+		int size=kernel.length;
 		final IntervalView<UnsignedByteType> expandedView = Views.expandMirrorDouble(input, size/2, size/2 );
+		final RandomAccess<UnsignedByteType> r = input.randomAccess();
 		final RandomAccess<UnsignedByteType> w = output.randomAccess();
-			final int iw = (int) input.max(0);
-			final int ih = (int) input.max(1);
-			final double[][] filter=new double[size][size];
-			for(int a=0; a<size; a++){
-				for(int b=0; b<size; b++){
-					filter[a][b]=1.0/(size*size);
-				}
+		final int iw = (int) input.max(0);
+		final int ih = (int) input.max(1);
+		double coeff=0;
+		for (int i=0; i<size; i++){
+			for (int j=0; j<size; j++){
+				coeff += kernel[i][j];
 			}
-			for (int x = 0; x <= iw-1; ++x) {
-				for (int y = 0; y <= ih-1; ++y) {
-					double vR=0;
-					double vG=0;
-					double vB=0;
-					int i=0;
-					RandomAccessibleInterval< UnsignedByteType > convolution = Views.interval( expandedView, new long[] { x-size/2, y-size/2 }, new long[]{ x+size/2, y+size/2} );
+		}
+		coeff= 1/(coeff);
+		for (int x = 1; x <= iw-1; ++x) {
+			for (int y = 1; y <= ih-1; ++y) {
+			double vR=0;
+			double vG=0;
+			double vB=0;
+			int i=0;
+			RandomAccessibleInterval< UnsignedByteType > convolution = Views.interval( expandedView, new long[] { x-size/2, y-size/2 }, new long[]{ x+size/2, y+size/2} );
+			
+			final IntervalView<UnsignedByteType> inputR = Views.hyperSlice(convolution, 2, 0);
+			final IntervalView<UnsignedByteType> inputG = Views.hyperSlice(convolution, 2, 1);
+			final IntervalView<UnsignedByteType> inputB = Views.hyperSlice(convolution, 2, 2);
+			final Cursor<UnsignedByteType> cR = inputR.cursor();
+			final Cursor<UnsignedByteType> cG = inputG.cursor();
+			final Cursor<UnsignedByteType> cB = inputB.cursor();
 
-					final IntervalView<UnsignedByteType> inputR = Views.hyperSlice(convolution, 2, 0);
-					final IntervalView<UnsignedByteType> inputG = Views.hyperSlice(convolution, 2, 1);
-					final IntervalView<UnsignedByteType> inputB = Views.hyperSlice(convolution, 2, 2);
-					final Cursor<UnsignedByteType> cR = inputR.cursor();
-					final Cursor<UnsignedByteType> cG = inputG.cursor();
-					final Cursor<UnsignedByteType> cB = inputB.cursor();
-
-					while(cR.hasNext() && cG.hasNext() && cB.hasNext()){
-						cR.fwd();
-						cG.fwd();
-						cB.fwd();
-						final UnsignedByteType valR = cR.get();
-						final UnsignedByteType valG = cG.get();
-						final UnsignedByteType valB = cB.get();
-						vR=vR+valR.get()*filter[i/size][i%size];
-						vG=vG+valG.get()*filter[i/size][i%size];
-						vB=vB+valB.get()*filter[i/size][i%size];
-						i++;
-					}
-					w.setPosition(x, 0);
-					w.setPosition(y, 1);
-
-					w.setPosition(0, 2);
-					final UnsignedByteType valR2=w.get();
-					valR2.set((int) vR);
-					w.setPosition(1, 2);
-					final UnsignedByteType valG2=w.get();
-					valG2.set((int) vG);
-					w.setPosition(2, 2);
-					final UnsignedByteType valB2=w.get();
-					valB2.set((int) vB);
-
-				}
+			while(cR.hasNext() && cG.hasNext() && cB.hasNext()){
+				cR.fwd();
+				cG.fwd();
+				cB.fwd();
+				final UnsignedByteType valR = cR.get();
+				final UnsignedByteType valG = cG.get();
+				final UnsignedByteType valB = cB.get();
+				vR=vR+valR.get()*kernel[i/size][i%size];
+				vG=vG+valG.get()*kernel[i/size][i%size];
+				vB=vB+valB.get()*kernel[i/size][i%size];
+				i++;
 			}
+			w.setPosition(x, 0);
+			w.setPosition(y, 1);
+
+			w.setPosition(0, 2);
+			final UnsignedByteType valR2=w.get();
+			vR=vR*coeff;
+			valR2.set((int) vR);
+			w.setPosition(1, 2);
+			final UnsignedByteType valG2=w.get();
+			vG=vG*coeff;
+			valG2.set((int) vG);
+			w.setPosition(2, 2);
+			final UnsignedByteType valB2=w.get();
+			vB=vB*coeff;
+			valB2.set((int) vB);
+			}
+		}
 	}
+	public static void meanFilter(final Img<UnsignedByteType> input, final Img<UnsignedByteType> output, int size) {
+		final float[][] filter=new float[size][size];
+		for(int a=0; a<size; a++){
+			for(int b=0; b<size; b++){
+				filter[a][b]=1.0F;
+			}
+		}
+		convolution(input, output, filter);
+	}
+
+	public static float[][] MatrixGauss(int size){
+        int P=(size-1)/2;
+        float sigma = 4/3;
+        float somme=0;
+        float[][] matrice=new float[size][size];
+        for(int i=-P; i<P+1; i++){
+            for(int j=-P; j<P+1; j++){
+                matrice[i+P][j+P]=(float) Math.exp(-(i*i + j*j)/(2*sigma*sigma));
+                somme+=matrice[i+P][j+P];
+            }
+        }
+        for(int i=-P; i<P+1; i++){
+            for(int j=-P; j<P+1; j++){
+                matrice[i+P][j+P]/=somme;
+            }
+        }
+        return matrice;
+    }
+
+    public static void FiltreGaussien(final Img<UnsignedByteType> input, final Img<UnsignedByteType> output, int size){
+        convolution(input, output, MatrixGauss(size));
+    }
+	
 
 
 

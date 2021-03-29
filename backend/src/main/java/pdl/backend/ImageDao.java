@@ -86,6 +86,7 @@ public class ImageDao implements Dao<Image> {
       SCIFIOImgPlus<UnsignedByteType> imgbyte = ImageConverter.imageFromJPEGBytes(img.getData());
       switch (params[0]) {
         case "increaseLuminosity":
+        System.out.println("lumiere");
           System.out.println(params[1] + "     " + params[2]);
           if (params[1]!= null && params[2]==null) {
             System.out.println("POUET2");
@@ -97,14 +98,16 @@ public class ImageDao implements Dao<Image> {
           break;
 
         case "histogram":
+        System.out.println("histo");
         if (params[1]== null && params[2]==null) {
           Algo.EgalisationHistogramme(imgbyte);
         } else {
           throw new BadArguments(params[0] + "ne prend pas d'arguments");
         }
         break;
-/*
+
         case "coloredFilter":
+        System.out.println("teinte");
         if (params[1]!= null && params[2]==null) {
           int s = Integer.valueOf(params[1]);
           if (s < 360 && s > 0) {
@@ -118,17 +121,18 @@ public class ImageDao implements Dao<Image> {
         break;
 
         case "blurryFilter":
+        System.out.println("flou");
           if (params[1]!= null && params[2]!=null) {
             if (params[1] == "moyen") {
-              Algo.filtreMoyen(imgbyte, Integer.valueOf(params[2]));
+              Algo.meanFilter(imgbyte,imgbyte, Integer.valueOf(params[2]));
             } else {
-              Algo.filtreGaussien(imgbyte, Integer.valueOf(params[2]));
+              Algo.FiltreGaussien(imgbyte, imgbyte, Integer.valueOf(params[2]));
             }
           } else {
             throw new BadArguments(params[0] + "prend 2 arguments");
           }
         break;
-        
+        /*
         case "borderFilter":
         if (params[1]== null && params[2]==null) {
           Algo.BorderFilter(imgbyte);

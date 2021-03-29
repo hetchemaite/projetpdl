@@ -51,9 +51,9 @@
     </select>
 
     <input v-else-if="currentAlgo == 0 " id="gain" placeholder="Gain">
-    <input v-else-if="currentAlgo == 2 " id="gain" placeholder="Teinte (comprise entre 0 et 360)" size = 30>
+    <input v-else-if="currentAlgo == 2 " id="teinte" placeholder="Teinte (comprise entre 0 et 360)" size = 30>
 
-    <input v-if="currentAlgo == 3" id="param2" placeholder="Niveau de flou">
+    <input v-if="currentAlgo == 3" id="filtersize" placeholder="Niveau de flou">
 
 
 
@@ -221,7 +221,23 @@ export default {
     },
 
     algo(url) {
-      axios.get('http://localhost:8081/images/' + url+"?algorithm=increaseLuminosity&gain=25&pouet=28", {responseType:"blob"})
+
+      alert("pouet")
+
+      var algoToCall = "?algorithm="+this.algos[this.currentAlgo].text;
+      if(this.currentAlgo==0) {
+        algoToCall = algoToCall+"&gain="+document.getElementById('gain').value
+      }
+      if(this.currentAlgo==3) {
+        algoToCall = algoToCall+"&filter="+this.filtres[this.filterType].text+"&filtersize="+document.getElementById('filtersize').value
+      }
+      if(this.currentAlgo==2) {
+        algoToCall = algoToCall+"&teinte="+document.getElementById('teinte').value
+      }
+        alert(algoToCall)
+
+
+      axios.get('http://localhost:8081/images/'+url+algoToCall, {responseType:"blob"})
            .then((dldImage) =>  {
               alert("yoa");
               var reader = new window.FileReader();
