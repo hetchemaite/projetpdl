@@ -121,7 +121,6 @@ public class Algo {
         final Cursor<UnsignedByteType> cR = inputR.cursor();
         final Cursor<UnsignedByteType> cG = inputG.cursor();
         final Cursor<UnsignedByteType> cB = inputB.cursor();
-		System.out.println(teinte);
 		float[] hsv={0,0,0};
 		int rgb;
 		while(cR.hasNext() && cG.hasNext() && cB.hasNext()){
@@ -143,7 +142,13 @@ public class Algo {
 	public static void convolution(final Img<UnsignedByteType> input, final Img<UnsignedByteType> output,
 	float[][] kernel) {
 		int size=kernel.length;
-		final IntervalView<UnsignedByteType> expandedView = Views.expandMirrorDouble(input, size/2, size/2 );
+		
+		final IntervalView<UnsignedByteType> inputR = Views.hyperSlice(input, 2, 0);
+		final IntervalView<UnsignedByteType> inputG = Views.hyperSlice(input, 2, 1);
+		final IntervalView<UnsignedByteType> inputB = Views.hyperSlice(input, 2, 2);
+		final IntervalView<UnsignedByteType> expandedViewR = Views.expandMirrorDouble(inputR, size/2, size/2 );
+		final IntervalView<UnsignedByteType> expandedViewG = Views.expandMirrorDouble(inputG, size/2, size/2 );
+		final IntervalView<UnsignedByteType> expandedViewB = Views.expandMirrorDouble(inputB, size/2, size/2 );
 		final RandomAccess<UnsignedByteType> r = input.randomAccess();
 		final RandomAccess<UnsignedByteType> w = output.randomAccess();
 		final int iw = (int) input.max(0);
@@ -161,14 +166,13 @@ public class Algo {
 			double vG=0;
 			double vB=0;
 			int i=0;
-			RandomAccessibleInterval< UnsignedByteType > convolution = Views.interval( expandedView, new long[] { x-size/2, y-size/2 }, new long[]{ x+size/2, y+size/2} );
-			
-			final IntervalView<UnsignedByteType> inputR = Views.hyperSlice(convolution, 2, 0);
-			final IntervalView<UnsignedByteType> inputG = Views.hyperSlice(convolution, 2, 1);
-			final IntervalView<UnsignedByteType> inputB = Views.hyperSlice(convolution, 2, 2);
-			final Cursor<UnsignedByteType> cR = inputR.cursor();
-			final Cursor<UnsignedByteType> cG = inputG.cursor();
-			final Cursor<UnsignedByteType> cB = inputB.cursor();
+			RandomAccessibleInterval< UnsignedByteType > convolutionR = Views.interval( expandedViewR, new long[] { x-size/2, y-size/2 }, new long[]{ x+size/2, y+size/2} );
+			RandomAccessibleInterval< UnsignedByteType > convolutionG = Views.interval( expandedViewG, new long[] { x-size/2, y-size/2 }, new long[]{ x+size/2, y+size/2} );
+			RandomAccessibleInterval< UnsignedByteType > convolutionB = Views.interval( expandedViewB, new long[] { x-size/2, y-size/2 }, new long[]{ x+size/2, y+size/2} );
+
+			final Cursor<UnsignedByteType> cR = Views.iterable(convolutionR).cursor();
+			final Cursor<UnsignedByteType> cG = Views.iterable(convolutionG).cursor();
+			final Cursor<UnsignedByteType> cB = Views.iterable(convolutionB).cursor();
 
 			while(cR.hasNext() && cG.hasNext() && cB.hasNext()){
 				cR.fwd();

@@ -55,7 +55,7 @@ public class ImageController {
     Optional<Image> imgFile = imageDao.retrieve(id);
 
     if (imgFile.isEmpty()) {
-      System.out.print("YOUHOU");
+      //System.out.print("YOUHOU");
       return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
     String[] params = {null,null,null};
@@ -65,6 +65,7 @@ public class ImageController {
         params[0] = algorithm;
         params[1] = gain;
       } else if (gain==null && filtersize!=null && filter != null && teinte==null) {
+        //System.out.println("c'est pas la");
         params[0] = algorithm;
         params[1] = filter;
         params[2] = filtersize;
@@ -109,7 +110,7 @@ public class ImageController {
 
   @RequestMapping(value = "/images/{id}", method = RequestMethod.DELETE)
   public ResponseEntity<?> deleteImage(@PathVariable("id") long id) {
-    System.out.println(id);
+    //System.out.println(id);
     imageDao.delete(imageDao.retrieve(id).get());
     return new ResponseEntity<>(HttpStatus.OK);
   }
@@ -122,8 +123,8 @@ public class ImageController {
         BufferedImage buffImg = ImageIO.read(imgFile.getFile());
         long[] filedims = {(long) buffImg.getWidth(),(long) buffImg.getHeight()};
         Image img = new Image(file.getOriginalFilename(), file.getBytes(),filedims,new org.springframework.http.MediaType(file.getContentType().substring(6)));
-        System.out.println(file.getContentType());
-        System.out.println(file.getOriginalFilename());
+        //System.out.println(file.getContentType());
+        //System.out.println(file.getOriginalFilename());
         imageDao.create(img);
       } catch (final IOException e) {
         e.printStackTrace();
@@ -136,7 +137,7 @@ public class ImageController {
   public ArrayNode getImageList() {
     ArrayNode nodes = mapper.createArrayNode();
        List<Image> imgs = imageDao.retrieveAll();
-    System.out.println(imgs);
+    //System.out.println(imgs);
     imgs.forEach(image -> {
       /*objectNode.put("id", image.getId());
       System.out.println(image.getId());
@@ -146,7 +147,7 @@ public class ImageController {
 
     
 
-    System.out.println(nodes);
+    //System.out.println(nodes);
     return nodes;
   }
 

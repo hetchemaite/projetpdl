@@ -3,17 +3,6 @@
 
     <h3>{{ listImages }}</h3>
 
-    <select @change="downloadSelectedImage(selected)" v-model="selected" >
-      <option  v-for="(image, index) in listImages" :value ="index" :key="image"> 
-        {{ image.name }}
-      </option>
-    </select>
-
-
-<span> {{dldImage.data}} </span>
-
-<img src alt="" id="imagedld">
-
   <div class="container">
     <div class="large-12 medium-12 small-12 cell">
       <label>File
@@ -28,7 +17,7 @@
 
   <div class= "galery">
     <p><i class="arrow right" v-on:click="right()" ></i>
-    <img src="" alt="pas d'image chargée" id = "galleryCenter" v-on:click="removeImage()"/>
+    <img src="" alt="pas d'image chargée" id = "galleryCenter"/>
     <i class="arrow left" v-on:click="left()"></i></p>
   </div>
 
@@ -40,7 +29,7 @@
   <div class="algorithms">
     <select v-model="currentAlgo" alt="Selectionner un algo">
       <option  v-for="(algo, index) in algos" :value ="index" :key="algo"> 
-        {{ algo.text }}
+        {{ algo.name }}
       </option>
     </select>
     
@@ -59,7 +48,7 @@
 
   </div>  
 
-  <button v-on:click="algo(listImages[galleryActual].id)">light mgl</button>
+  <button v-on:click="algo(listImages[galleryActual].id)">Apply Algorithm</button>
   <!-- <div class="memebox">
     <div class="meme" v-for="image in allImages" :key="image" >
       <img src=image alt=image>
@@ -88,7 +77,7 @@ export default {
     return {
       selected: '',
       listImages: [],
-      galleryActual:1,
+      galleryActual:0,
       file: '',
       dldImage: "blob",
       galeryImage: "blob",
@@ -96,11 +85,11 @@ export default {
       errors: [],
       pixel: 5,
       algos: [
-        {text :'increaseLuminosity', value : 0},
-        {text :'histogram', value : 1},
-        {text :'coloredFilter', value : 2},
-        {text :'blurryFilter', value : 3},
-        {text :'borderFilter', value : 4},
+        {name:'Filtre de Luminosité', text :'increaseLuminosity', value : 0},
+        {name :'Egalisation d\'Histograme', text :'histogram', value : 1},
+        {name : 'Filtre Coloré',text :'coloredFilter', value : 2},
+        {name : 'Filtre de Flou', text :'blurryFilter', value : 3},
+        {name: 'Filtre de Bordure (ne marche pas)', text :'borderFilter', value : 4},
       ],
       currentAlgo:0,
       filtres: [
@@ -145,6 +134,7 @@ export default {
                 }
               })
               .catch((e) => {
+                alert(e);
                 this.errors.push(e);
               })
 
@@ -169,7 +159,6 @@ export default {
           this.errors.push(error)
         }
       ).finally(
-        //alert("yo")
       )
     },
 
@@ -209,12 +198,14 @@ export default {
         .get(`images`)
         .then((listImage) => {
           // JSON responses are automatically parsed.
-          alert(listImage.data[0])
+          //alert(listImage.data[0])
           this.listImages = listImage.data
           this.gallery()
+          
 
         })
         .catch((e) => {
+          alert(e)
           this.errors.push(e);
         });
 
@@ -222,7 +213,7 @@ export default {
 
     algo(url) {
 
-      alert("pouet")
+      //alert("pouet")
 
       var algoToCall = "?algorithm="+this.algos[this.currentAlgo].text;
       if(this.currentAlgo==0) {
@@ -234,16 +225,16 @@ export default {
       if(this.currentAlgo==2) {
         algoToCall = algoToCall+"&teinte="+document.getElementById('teinte').value
       }
-        alert(algoToCall)
+        //alert(algoToCall)
 
 
-      axios.get('http://localhost:8081/images/'+url+algoToCall, {responseType:"blob"})
+      axios.get('/images/'+url+algoToCall, {responseType:"blob"})
            .then((dldImage) =>  {
-              alert("yoa");
+              //alert("yoa");
               var reader = new window.FileReader();
               reader.readAsDataURL(dldImage.data);
               reader.onload = function() {
-                alert(reader.result)
+                //alert(reader.result)
                 document.getElementById("galleryCenter").setAttribute("src", reader.result);
               }
               this.getImages();
@@ -255,13 +246,13 @@ export default {
     },
 
     downloadSelectedImage(url) {
-      axios.get('http://localhost:8081/images/' + url, {responseType:"blob"})
+      axios.get('/images/' + url, {responseType:"blob"})
            .then(function (dldImage) {
               //alert();
               var reader = new window.FileReader();
               reader.readAsDataURL(dldImage.data);
               reader.onload = function() {
-                alert(reader.result)
+                //alert(reader.result)
                 document.getElementById("imagedld").setAttribute("src", reader.result);
 
               }
