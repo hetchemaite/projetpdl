@@ -133,15 +133,16 @@ public class ImageDao implements Dao<Image> {
             throw new BadArguments(params[0] + "prend 2 arguments");
           }
         break;
-        /*
+        
         case "borderFilter":
         if (params[1]== null && params[2]==null) {
-          Algo.BorderFilter(imgbyte);
+          SCIFIOImgPlus<UnsignedByteType> imgbyte2 = ImageConverter.imageFromJPEGBytes(img.getData());
+          Algo.BorderFilter(imgbyte, imgbyte2);
         } else {
           throw new BadArguments(params[0] + "ne prend pas d'arguments");
         }
         break;
-*/
+
         default:
           throw new BadArguments(params[0] + "n'existe pas");
       }

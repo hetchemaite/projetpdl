@@ -17,7 +17,7 @@ import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 import net.imglib2.exception.IncompatibleTypeException;
-
+import net.imglib2.Dimensions;
 public class Algo {
 
 
@@ -211,7 +211,6 @@ public class Algo {
 				filter[a][b]=1.0F;
 			}
 		}
-		convolution(input, output, filter);
 	}
 
 	public static float[][] MatrixGauss(int size){
@@ -238,6 +237,62 @@ public class Algo {
     }
 	
 
+	public static void convertGrey(Img<UnsignedByteType> input) {
+        final IntervalView<UnsignedByteType> inputR = Views.hyperSlice(input, 2, 0);
+        final IntervalView<UnsignedByteType> inputG = Views.hyperSlice(input, 2, 1);
+        final IntervalView<UnsignedByteType> inputB = Views.hyperSlice(input, 2, 2);
+
+        final Cursor<UnsignedByteType> cR = inputR.cursor();
+        final Cursor<UnsignedByteType> cG = inputG.cursor();
+        final Cursor<UnsignedByteType> cB = inputB.cursor();
+
+        while (cR.hasNext() && cG.hasNext() && cB.hasNext()) {
+
+            cR.fwd();
+            cG.fwd();
+            cB.fwd();
+            double rgb = 0.3 * cR.get().get() + 0.59 * cG.get().get() + 0.11 * cB.get().get();
+            int rgb2 = (int) rgb;
+            cR.get().set(rgb2);
+            cG.get().set(rgb2);
+            cB.get().set(rgb2);
+        }
+    }
+	
+	
+    public static void BorderFilter(Img<UnsignedByteType> input, Img<UnsignedByteType> input2) {
+		final ArrayImgFactory<UnsignedByteType> factory = new ArrayImgFactory<>(new UnsignedByteType());
+		final Dimensions dim = input;
+		final Img<UnsignedByteType> outputConvoH = factory.create(dim);
+		final Img<UnsignedByteType> outputConvoV = factory.create(dim);
+        convertGrey(input);
+		convertGrey(input2);
+        float[][] h = { { -1, -2, -1 }, { 0, 0, 0 }, { 1, 2, 1 } };
+        float[][] v = { { -1, 0, 1 }, { -2, 0, 2 }, { -1, 0, 1 } };
+		convolution(input, outputConvoH, h);
+		convolution(input2, outputConvoV, v);	
+		final Cursor<UnsignedByteType> r = outputConvoH.cursor();
+		final Cursor<UnsignedByteType> r2 = outputConvoV.cursor();
+		final Cursor<UnsignedByteType> w = input.cursor();
+        while (r.hasNext() && r2.hasNext()) {
+            r.fwd();
+			r2.fwd();
+			w.fwd();
+            final UnsignedByteType val = r.get();
+			final UnsignedByteType val2 = r2.get();
+			final UnsignedByteType valw = w.get();
+			double valcarre=val.get()*val.get();
+			double val2carre=val2.get()*val2.get();
+			double m=Math.sqrt(valcarre + val2carre);
+            if (m > 255) {
+                valw.set(255);
+            } else if (m < 0) {
+                valw.set(0);
+            } else {
+                valw.set((int)m);
+            }
+        }
+    }
 
 
 
