@@ -1,7 +1,7 @@
 <template>
   <div class="hello">
 
-    <h3>{{ listImages }}</h3>
+    <h3>{{ listImages.names }}</h3>
 
   <div class="container">
     <div class="large-12 medium-12 small-12 cell">
@@ -49,6 +49,10 @@
   </div>  
 
   <button v-on:click="algo(listImages[galleryActual].id)">Apply Algorithm</button>
+
+  <a download="" href="" title="DownloadImage" id="download">
+    <img alt="Download Image">
+  </a>
   <!-- <div class="memebox">
     <div class="meme" v-for="image in allImages" :key="image" >
       <img src=image alt=image>
@@ -114,9 +118,12 @@ export default {
       }
       document.getElementById("galleryCenter").setAttribute("src", this.allImages[this.galleryActual]);
     },
+
     choose(index){
       this.galleryActual = index
       document.getElementById("galleryCenter").setAttribute("src", this.allImages[this.galleryActual]);
+      document.getElementById("download").setAttribute("href", this.allImages[this.galleryActual]);
+      document.getElementById("download").setAttribute("download", this.listImages[this.galleryActual].name);
     },
     gallery() {
       this.allImages=[];
@@ -158,8 +165,9 @@ export default {
           alert(error)
           this.errors.push(error)
         }
-      ).finally(
-      )
+      ).finally(() => {
+        this.choose(this.galleryActual);
+      })
     },
 
 
@@ -185,7 +193,6 @@ export default {
         document.getElementById("galleryCenter").setAttribute("src", this.allImages[this.galleryActual])
 
       })
-        
       .catch((e) => {
         alert(e)
         this.errors.push(e)
@@ -201,13 +208,13 @@ export default {
           //alert(listImage.data[0])
           this.listImages = listImage.data
           this.gallery()
-          
 
         })
         .catch((e) => {
           alert(e)
           this.errors.push(e);
-        });
+        })
+        ;
 
     },
 

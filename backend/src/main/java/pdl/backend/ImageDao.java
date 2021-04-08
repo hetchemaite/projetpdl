@@ -110,7 +110,7 @@ public class ImageDao implements Dao<Image> {
 
         if (params[1]!= null && params[2]==null) {
           int s = Integer.valueOf(params[1]);
-          if (s < 360 && s > 0) {
+          if (s < 360 && s >= 0) {
             Algo.Teinte(imgbyte, s);
           } else {
             throw new BadArguments(params[1] + " n'est pas une valeur valide pour " + params [0]);
