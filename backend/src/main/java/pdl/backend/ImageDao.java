@@ -25,7 +25,9 @@ import io.scif.img.SCIFIOImgPlus;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.exception.IncompatibleTypeException;
 
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 
 import org.springframework.core.io.ClassPathResource;
@@ -35,23 +37,51 @@ import org.springframework.stereotype.Repository;
 public class ImageDao implements Dao<Image> {
 
   private final Map<Long, Image> images = new HashMap<>();
-
   public ImageDao() {
     // placez une image test.jpg dans le dossier "src/main/resources" du projet
     final ClassPathResource imgFile = new ClassPathResource("test.jpg");
     byte[] fileContent;
     org.springframework.http.MediaType filetype;
+
     try {
+      
       BufferedImage buffImg = ImageIO.read(imgFile.getFile());
 
-      long[] filedims = {(long) buffImg.getWidth(),(long) buffImg.getHeight()};
+      int[] filedims = {buffImg.getWidth(),buffImg.getHeight()};
+      float[] vignetteMaxDims = {110,50};
+      int[] vignetteDims = {0,0};
+
+      if (filedims[0]/vignetteMaxDims[0] > filedims[1]/vignetteMaxDims[1]) {
+        vignetteDims[0]= (int) vignetteMaxDims[0];
+        vignetteDims[1] = (int) (filedims[1] * (vignetteMaxDims[0]/filedims[0]));
+      } else {
+        vignetteDims[1]=(int) vignetteMaxDims[1];
+        System.out.println(filedims[0]);
+        System.out.println(vignetteMaxDims[1]/filedims[1]);
+        vignetteDims[0] = (int) (filedims[0] * (vignetteMaxDims[1]/filedims[1]));
+      }
+      System.out.println("" + vignetteDims[0]+"    "+ vignetteDims[1]);
+
+      BufferedImage vignette = new BufferedImage((int) vignetteDims[0],(int) vignetteDims[1] , buffImg.getType());
+
+      Graphics2D g = vignette.createGraphics();
+
+      g.drawImage(buffImg, 0, 0,(int) vignetteDims[0],(int) vignetteDims[1], null);
+      g.dispose();
+      
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      ImageIO.write(vignette, Files.probeContentType(imgFile.getFile().toPath()).substring(6), baos);
+      byte[] vignetteData = baos.toByteArray();
+
+     
 
       fileContent = Files.readAllBytes(imgFile.getFile().toPath());
-      //filetype = new org.springframework.http.MediaType(Files.probeContentType(imgFile.getFile().toPath()));
+
       filetype = new org.springframework.http.MediaType(Files.probeContentType(imgFile.getFile().toPath()).substring(6));
 
-      Image img = new Image("test.jpg", fileContent, filedims, filetype);
-      
+
+      Image img = new Image("test.jpg", fileContent, filedims, filetype, vignetteData);
+
       images.put(img.getId(), img);
     } catch (final IOException e) {
       e.printStackTrace();

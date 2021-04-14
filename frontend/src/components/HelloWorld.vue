@@ -1,7 +1,23 @@
 <template>
   <div class="hello">
 
-    <h3>{{ listImages.names }}</h3>
+  <div class="overlay-image">
+  <a href="https://www.u-bordeaux.fr/" target="_blank">
+    <img class="image" src="../assets/fac.gif" alt="université bordeaux" />
+    <div class="hover">
+      <div class="text">Site web de l'université de Bordeaux</div>
+    </div>
+  </a>
+  </div>
+
+  <div class="overlay-image2">
+  <a href="https://gitlab.emi.u-bordeaux.fr/cezahe/projet-pdl" target="_blank">
+    <img class="image"  src="../assets/giphy.gif" alt="projet gitlab" />
+    <div class="hover">
+      <div class="text">Projet sur GitLab</div>
+    </div>
+  </a>
+  </div>
 
   <div class="container">
     <div class="large-12 medium-12 small-12 cell">
@@ -100,7 +116,8 @@ export default {
         {text :'gaussien', value : 0},
         {text :'moyen', value : 1},
       ],
-      filterType:0
+      filterType:0,
+      displayedImage:0
     };
   },
 
@@ -110,21 +127,33 @@ export default {
       if (this.galleryActual > 0) {
         this.galleryActual--;
       }
-      document.getElementById("galleryCenter").setAttribute("src", this.allImages[this.galleryActual]);
+      this.choose(this.galleryActual);
     },
     right() {
       if (this.galleryActual < this.allImages.length-1) {
         this.galleryActual++;
       }
-      document.getElementById("galleryCenter").setAttribute("src", this.allImages[this.galleryActual]);
+      this.choose(this.galleryActual);
     },
+
 
     choose(index){
       this.galleryActual = index
-      document.getElementById("galleryCenter").setAttribute("src", this.allImages[this.galleryActual]);
-      document.getElementById("download").setAttribute("href", this.allImages[this.galleryActual]);
-      document.getElementById("download").setAttribute("download", this.listImages[this.galleryActual].name);
+      axios.get('images/' + index, {responseType: "blob"})
+              .then((displayedImage) => {
+                var reader = new window.FileReader();
+                reader.readAsDataURL(displayedImage.data);
+                reader.onload = () => {
+                  document.getElementById("galleryCenter").setAttribute("src", reader.result);
+                  document.getElementById("download").setAttribute("href", this.allImages[this.galleryActual]);
+                  document.getElementById("download").setAttribute("download", this.listImages[this.galleryActual].name);
+                }
+              })
+      
     },
+
+
+
     gallery() {
       this.allImages=[];
       let promises = [];
@@ -132,7 +161,7 @@ export default {
       function asyncGallery (i) {
         return new Promise((resolve, reject) => {
           try {
-            axios.get('images/' + i, {responseType: "blob"})
+            axios.get('images/' + i +"?vignette=true", {responseType: "blob"})
               .then((galeryImage) => {
                 var reader = new window.FileReader();
                 reader.readAsDataURL(galeryImage.data);
@@ -387,6 +416,130 @@ img {
   width:auto;
   height:auto;
   border:3px solid blue;
+}
+
+
+/********* Superposition simple de texte sur une image *******/
+
+/* Conteneur principal */
+.overlay-image {
+ position: absolute;
+ margin-left: 5%;
+ width: 15%;
+}
+
+/* Image originale */
+.overlay-image .image {
+ display: block;
+ width: 100%;
+ height: auto;
+}
+
+/* Texte original */
+.overlay-image .text {
+ color: #fff;
+ font-size: 20px;
+ line-height: 1.5em;
+ text-shadow: 2px 2px 2px rgb(0, 0, 0);
+ text-align: center;
+ position: absolute;
+ top: 50%;
+ left: 50%;
+ transform: translate(-50%, -50%);
+ width: 100%;
+}
+
+/********* Hover image et texte *******/
+
+/* Overlay */
+.overlay-image .hover {
+ position: absolute;
+ top: 0;
+ height: 100%;
+ width: 100%;
+ opacity: 0;
+ transition: .5s ease;
+}
+
+/* Apparition overlay sur passage souris */
+.overlay-image:hover .hover {
+ opacity: 1;
+}
+
+/********* Hover background et texte uniquement *******/
+
+.overlay-image .normal {
+ transition: .5s ease;
+}
+.overlay-image:hover .normal {
+ opacity: 0;
+}
+.overlay-image .hover {
+ background-color: rgba(0,0,0,0.5);
+}
+
+
+
+
+
+/********* Superposition simple de texte sur une image *******/
+
+/* Conteneur principal */
+.overlay-image2 {
+ position: relative;
+ margin-left: 90%;
+ width: 10%;
+}
+
+/* Image originale */
+.overlay-image2 .image {
+ display: block;
+ width: 100%;
+ height: auto;
+}
+
+/* Texte original */
+.overlay-image2 .text {
+ color: #fff;
+ font-size: 20px;
+ line-height: 1.5em;
+ text-shadow: 2px 2px 2px rgb(0, 0, 0);
+ text-align: center;
+ position: absolute;
+ top: 50%;
+ left: 50%;
+ transform: translate(-50%, -50%);
+ width: 100%;
+}
+
+
+/********* Hover image et texte *******/
+
+/* Overlay */
+.overlay-image2 .hover {
+ position: absolute;
+ top: 0;
+ height: 100%;
+ width: 100%;
+ opacity: 0;
+ transition: .5s ease;
+}
+
+/* Apparition overlay sur passage souris */
+.overlay-image2:hover .hover {
+ opacity: 1;
+}
+
+/********* Hover background et texte uniquement *******/
+
+.overlay-image2 .normal {
+ transition: .5s ease;
+}
+.overlay-image2:hover .normal {
+ opacity: 0;
+}
+.overlay-image2 .hover {
+ background-color: rgba(0,0,0,0.5);
 }
 
 
