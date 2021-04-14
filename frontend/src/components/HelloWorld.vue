@@ -370,9 +370,9 @@ img {
   bottom: 20px;
 }
 #galleryCenter {
-  max-height: 500px;
+  max-height: 400px;
   height:auto;
-  width:auto;
+  width:50%;
 }
 
 .arrow {
