@@ -353,7 +353,7 @@ export default {
                     }
                   img.src = reader.result
                   }
-                  //this.getImages();
+                  this.getImages();
                 })
                 .catch((e) => {
                   alert(e)
@@ -502,9 +502,9 @@ export default {
 
   #galleryCenter {
     position: inherit;
-    max-height: 100%;
+    max-height: 50vh;
     height:auto;
-    width:50%;
+    max-width:50%;
     margin-top : 10px; margin-bottom : 10px;
     background-color:#f44336
   }
