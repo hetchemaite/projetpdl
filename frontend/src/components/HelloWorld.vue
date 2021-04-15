@@ -1,6 +1,7 @@
-<template>
-  <div class="hello">
+<template >
 
+  <div  class="hello" >
+    
   <div class="overlay-image">
   <a href="https://www.u-bordeaux.fr/" target="_blank">
     <img class="image" src="../assets/fac.gif" alt="université bordeaux" />
@@ -21,53 +22,65 @@
 
   <div class="container">
     <div class="large-12 medium-12 small-12 cell">
-      <label>File
-        <input type="file" id="file" ref="file" v-on:change="handleFileUpload()" />
-      </label>
-        <button v-on:click="submitFile()">Submit</button>
+ 
+      <label for="file" class="button button1">Choisir une image</label>
+      <input name="uploadDocument" type="file" id="file" ref="file" style="display:none" v-on:change="handleFileUpload(),upload() " />
+      <span id="up"> (Aucun fichier sélectionné) </span>
+      
+
+ 
+        <button class="button button2" v-on:click="submitFile()">Submit</button>
     </div>
   </div>
-
-  <button v-on:click="removeImage()">SUPPRIMER CETTE IMAGE NULLE</button>
-
-
+  <button class="button button2" v-on:click="removeImage()">SUPPRIMER CETTE IMAGE NULLE</button>
   <div class= "galery">
     <p><i class="arrow right" v-on:click="right()" ></i>
     <img src="" alt="pas d'image chargée" id = "galleryCenter"/>
     <i class="arrow left" v-on:click="left()"></i></p>
   </div>
+<div> 
 
+</div>
 
-  <div class="test">
+  <div class="test" >
    <img class="vignettes" v-for="(image,index) in allImages" :value="index" :key="image" :src="image" :alt="pout" v-on:click="choose(index)" />
   </div>
 
   <div class="algorithms">
-    <select v-model="currentAlgo" alt="Selectionner un algo">
+
+    <select v-model="currentAlgo" alt="Selectionner un algo" v-on:change="open_button()">
       <option  v-for="(algo, index) in algos" :value ="index" :key="algo"> 
         {{ algo.name }}
       </option>
     </select>
     
-    <select v-if="currentAlgo == 3" v-model="filterType" alt="Selectionner un filtre">
+    
+
+    <input v-if="currentAlgo == 0 " id="gain" placeholder="Gain">
+
+    <div v-else-if="currentAlgo == 2 ">
+      <input id="teinte" placeholder="Teinte (comprise entre 0 et 360)" size = 30 v-on:change="wrongTint()">
+      <div class="text_error" id="wrongtint" style="display:none"> Veuillez choisir une valeur entre 0 et 360
+      </div>
+    </div>
+
+    <div v-else-if="currentAlgo == 3">
+      <select  v-model="filterType" alt="Selectionner un filtre">
       <option  v-for="(filtre, index) in filtres" :value ="index" :key="filtre"> 
         {{ filtre.text }}
       </option>
-    </select>
+      </select>
+      <input  id="filtersize" placeholder="Niveau de flou">
+    </div>
 
-    <input v-else-if="currentAlgo == 0 " id="gain" placeholder="Gain">
-    <input v-else-if="currentAlgo == 2 " id="teinte" placeholder="Teinte (comprise entre 0 et 360)" size = 30>
-
-    <input v-if="currentAlgo == 3" id="filtersize" placeholder="Niveau de flou">
-
-
+    <img id="loader" src="../assets/ajax-loader.gif" alt="potipacman" style="display:none"/>
 
   </div>  
 
-  <button v-on:click="algo(listImages[galleryActual].id)">Apply Algorithm</button>
+  <button class="button button2" id="button_algo" v-on:click="algo(listImages[galleryActual].id)">Apply Algorithm</button>
 
-  <a download="" href="" title="DownloadImage" id="download">
-    <img alt="Download Image">
+  <a class="button button1"  href="" title="DownloadImage" id="download">
+    <img alt=" Download Image">
   </a>
   <!-- <div class="memebox">
     <div class="meme" v-for="image in allImages" :key="image" >
@@ -75,11 +88,20 @@
     </div>
   </div>
    -->
+   
+
+
+
+
+
 </div>
 
 
 
+
+
 </template>
+
 
 
 
@@ -117,7 +139,8 @@ export default {
         {text :'moyen', value : 1},
       ],
       filterType:0,
-      displayedImage:0
+      displayedImage:0,
+      newVign:0
     };
   },
 
@@ -136,20 +159,22 @@ export default {
       this.choose(this.galleryActual);
     },
 
+    upload(){
+      document.getElementById("up").innerHTML = this.file.name;
+    },
 
     choose(index){
       this.galleryActual = index
-      axios.get('images/' + index, {responseType: "blob"})
+      axios.get('images/' + this.listImages[index].id, {responseType: "blob"})
               .then((displayedImage) => {
                 var reader = new window.FileReader();
                 reader.readAsDataURL(displayedImage.data);
                 reader.onload = () => {
                   document.getElementById("galleryCenter").setAttribute("src", reader.result);
-                  document.getElementById("download").setAttribute("href", this.allImages[this.galleryActual]);
+                  document.getElementById("download").setAttribute("href", document.getElementById("galleryCenter").src);
                   document.getElementById("download").setAttribute("download", this.listImages[this.galleryActual].name);
                 }
               })
-      
     },
 
 
@@ -214,12 +239,13 @@ export default {
 
       .then(() => {
         this.getImages()
+        this.listImages.splice(this.galleryActual,1)
         if (this.galleryActual > 0) {
           this.galleryActual--
         } else if ( this.galleryActual < this.allImages.length) {
           this.galleryActual++
         }
-        document.getElementById("galleryCenter").setAttribute("src", this.allImages[this.galleryActual])
+        this.choose(this.listImages[this.galleryActual].id)
 
       })
       .catch((e) => {
@@ -247,9 +273,28 @@ export default {
 
     },
 
-    algo(url) {
+    wrongTint() {
+    
+    var valueteinte =  document.getElementById('teinte').value
+    if (valueteinte < 0 || valueteinte > 360) {
+          document.getElementById('wrongtint').style.display="block";
+          document.getElementById('button_algo').disabled = true
+          return;
+        } else {
+          document.getElementById('wrongtint').style.display="none";
+          document.getElementById('button_algo').disabled = false
+        }
+    
+    },
 
-      //alert("pouet")
+    open_button() {
+      document.getElementById('button_algo').disabled = false
+    },
+
+    algo(url) {
+      document.getElementById('loader').style.display="block";
+      document.getElementById('button_algo').disabled = true
+
 
       var algoToCall = "?algorithm="+this.algos[this.currentAlgo].text;
       if(this.currentAlgo==0) {
@@ -259,26 +304,102 @@ export default {
         algoToCall = algoToCall+"&filter="+this.filtres[this.filterType].text+"&filtersize="+document.getElementById('filtersize').value
       }
       if(this.currentAlgo==2) {
-        algoToCall = algoToCall+"&teinte="+document.getElementById('teinte').value
+        var valueteinte =  document.getElementById('teinte').value
+        
+        algoToCall = algoToCall+"&teinte="+valueteinte
       }
         //alert(algoToCall)
 
+      let promise = new Promise((resolve, reject) => {
+        try {
+          axios.get('/images/'+url+algoToCall, {responseType:"blob"})
+              .then((dldImage) =>  {
+                  //alert("yoa");
+                  var reader = new window.FileReader();
+                  reader.readAsDataURL(dldImage.data);
+                  reader.onload = () => {
+                    document.getElementById("galleryCenter").setAttribute("src", reader.result);
+                    //alert("pouet")
+                    var img = document.createElement("img");
+                    img.onload = () => {
+                      
+                      var canvas = document.createElement("canvas");
+                      var ctx = canvas.getContext("2d");
+                      ctx.drawImage(img, 0, 0);
 
-      axios.get('/images/'+url+algoToCall, {responseType:"blob"})
-           .then((dldImage) =>  {
-              //alert("yoa");
-              var reader = new window.FileReader();
-              reader.readAsDataURL(dldImage.data);
-              reader.onload = function() {
-                //alert(reader.result)
-                document.getElementById("galleryCenter").setAttribute("src", reader.result);
-              }
-              this.getImages();
-            })
-            .catch((e) => {
-              alert(e)
-              this.errors.push(e);
+                      var MAX_WIDTH = 110;
+                      var MAX_HEIGHT = 50;
+                      var width = img.width;
+                      var height = img.height;
+                      if (width > height) {
+                        if (width > MAX_WIDTH) {
+                          height *= MAX_WIDTH / width;
+                          width = MAX_WIDTH;
+                        }
+                      } else {
+                        if (height > MAX_HEIGHT) {
+                          width *= MAX_HEIGHT / height;
+                          height = MAX_HEIGHT;
+                        }
+                      }
+                      canvas.width = width;
+                      canvas.height = height;
+                      ctx = canvas.getContext("2d");
+                      ctx.drawImage(img, 0, 0, width, height);
+                      
+                      var dataurl = canvas.toDataURL('image/jpeg',1.0);
+
+                      resolve(dataurl)
+                    }
+                  img.src = reader.result
+                  }
+                  //this.getImages();
+                })
+                .catch((e) => {
+                  alert(e)
+                  this.errors.push(e);
+                });
+        } catch(e) {
+          reject();
+        }
+      })
+
+      promise.then(
+        (result) => {
+          function dataURItoBlob(dataURL, dataTYPE) {
+              var binary = atob(dataURL.split(',')[1]),
+                array = [];
+            for (var i = 0; i < binary.length; i++) array.push(binary.charCodeAt(i));
+            return new Blob([new Uint8Array(array)], {
+                type: dataTYPE || 'image/jpeg'
             });
+          }
+          //alert("send to server")
+
+          let formData = new FormData();
+          let blobdata = dataURItoBlob(result)
+          
+          formData.append('image', blobdata);
+          
+          axios.post( '/images/' + this.galleryActual,
+            formData
+          ).then(() => {
+            console.log('SUCCESS!!');
+          })
+          .catch(function(){
+            console.log('FAILURE!!');
+          });
+        })
+        .catch(
+        (error) =>{
+          alert(error)
+          this.errors.push(error)
+        })
+        .finally(() => {
+          document.getElementById('loader').style.display="none";
+          document.getElementById('button_algo').disabled = false
+          this.gallery()
+        })
     },
 
     downloadSelectedImage(url) {
@@ -303,6 +424,7 @@ export default {
     handleFileUpload(){
       this.file = this.$refs.file.files[0];
     },
+
     submitFile(){
       let formData = new FormData();
       formData.append('file', this.file);
@@ -341,206 +463,297 @@ export default {
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
+
 <style scoped>
-h3 {
-  margin: 40px 0 0;
-}
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
-}
-img {
-    max-width: 100%;
-    height: auto;
-}
 
-.galery{
-  position:relative;
-  top:15px;
-  width:50%;
-  margin-left: auto;
-  margin-right: auto;
-  bottom: 20px;
-}
-#galleryCenter {
-  max-height: 400px;
-  height:auto;
-  width:50%;
-}
 
-.arrow {
-  border: solid black;
-  border-width: 0 3px 3px 0;
-  padding: 10px;
-}
-.arrow:hover{
-  border : solid rgb(43, 180, 226);
-  border-width: 0 3px 3px 0;
-}
 
-.right {
-  position:absolute;
-  top:45%;
-  right:-10%;
-  float:right;
-  transform: rotate(-45deg);
-  -webkit-transform: rotate(-45deg);
-}
+  h3 {
+    margin: 40px 0 0;
+  }
+  ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  li {
+    display: inline-block;
+    margin: 0 10px;
+  }
+  a {
+    color: #42b983;
+  }
+  img {
+      max-width: 100%;
+      height: auto;
+      
+  }
 
-.left {
-  position:absolute;
-  top:45%;
-  left:-10%;
-  float:left;
-  transform: rotate(135deg);
-  -webkit-transform: rotate(135deg);
-}
-.test{
-  margin-top:45px;
-  width: auto;
-  margin-left: auto;
-  margin-right: auto;
-  background-color: blue;
-}
-.vignettes{
+  .galery{
+    position:relative;  
+    
+    margin-left: 20%;
+    margin-right: 20%;
+    margin-top: 1%;
+    margin-bottom: 1%;
+    
+    background-color:#555555
+  }
+
+
+  #galleryCenter {
+    position: inherit;
+    max-height: 100%;
+    height:auto;
+    width:50%;
+    margin-top : 10px; margin-bottom : 10px;
+    background-color:#f44336
+  }
+
+
+  .arrow {
+    border: solid #555555;
+    border-width: 0 3px 3px 0;
+    padding: 10px;
+  }
+  .arrow:hover{
+    border : solid #f44336;
+    border-width: 0 3px 3px 0;
+  }
+
+  .right {
+    position:absolute;
+    top:45%;
+    right:-10%;
+    float:right;
+    transform: rotate(-45deg);
+    -webkit-transform: rotate(-45deg);
+    
+  }
+
+  .left {
+    position:absolute;
+    top:45%;
+    left:-10%;
+    float:left;
+    transform: rotate(135deg);
+    -webkit-transform: rotate(135deg);
+    
+  }
+  .test{
+    margin-top:1%;
+    margin-bottom:1%;
+    height: 100%;
+    width: auto;
+    margin-left: 40%;
+    margin-right: 40%;
+    border: 10px black;
+    background-color:#555555;
+  }
+
+  .vignettes:hover {
+      transform:scale(1.2);
+  }
+
+
+  .vignettes{
+    margin-left: 3px;
+    margin-right: 3px;
+    margin-top: 5%;
+    margin-bottom: 5%;
+    max-height: 50px;
+    height:50px;
+    border:1px ;
+  }
+
+
+
+
+  /********* Superposition simple de texte sur une image *******/
+
+  /* Conteneur principal */
+  .overlay-image {
+  position: absolute;
+  margin-left: 5%;
+  width: 15%;
+  }
+
+  /* Image originale */
+  .overlay-image .image {
+  display: block;
+  width: 100%;
+  height: auto;
+  }
+
+  /* Texte original */
+  .overlay-image .text {
+  color: #fff;
+  font-size: 20px;
+  line-height: 1.5em;
+  text-shadow: 2px 2px 2px rgb(0, 0, 0);
+  text-align: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  }
+
+  /********* Hover image et texte *******/
+
+  /* Overlay */
+  .overlay-image .hover {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  opacity: 0;
+  transition: .5s ease;
+  }
+
+  /* Apparition overlay sur passage souris */
+  .overlay-image:hover .hover {
+  opacity: 1;
+  }
+
+  /********* Hover background et texte uniquement *******/
+
+  .overlay-image .normal {
+  transition: .5s ease;
+  }
+  .overlay-image:hover .normal {
+  opacity: 0;
+  }
+  .overlay-image .hover {
+  background-color: rgba(0,0,0,0.5);
+  }
+
+
+
+
+
+  /********* Superposition simple de texte sur une image *******/
+
+  /* Conteneur principal */
+  .overlay-image2 {
+  position: relative;
+  margin-left: 90%;
   
-  max-height: 50px;
-  max-width:5%;
-  width:auto;
-  height:auto;
-  border:3px solid blue;
-}
+  }
+
+  /* Image originale */
+  .overlay-image2 .image {
+  display: block;
+  width: 100%;
+  height: auto;
+  }
+
+  /* Texte original */
+  .overlay-image2 .text {
+  color: #fff;
+  font-size: 20px;
+  line-height: 1.5em;
+  text-shadow: 2px 2px 2px rgb(0, 0, 0);
+  text-align: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  }
 
 
-/********* Superposition simple de texte sur une image *******/
+  /********* Hover image et texte *******/
 
-/* Conteneur principal */
-.overlay-image {
- position: absolute;
- margin-left: 5%;
- width: 15%;
-}
+  /* Overlay */
+  .overlay-image2 .hover {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  opacity: 0;
+  transition: .5s ease;
+  }
 
-/* Image originale */
-.overlay-image .image {
- display: block;
- width: 100%;
- height: auto;
-}
+  /* Apparition overlay sur passage souris */
+  .overlay-image2:hover .hover {
+  opacity: 1;
+  }
 
-/* Texte original */
-.overlay-image .text {
- color: #fff;
- font-size: 20px;
- line-height: 1.5em;
- text-shadow: 2px 2px 2px rgb(0, 0, 0);
- text-align: center;
- position: absolute;
- top: 50%;
- left: 50%;
- transform: translate(-50%, -50%);
- width: 100%;
-}
+  /********* Hover background et texte uniquement *******/
 
-/********* Hover image et texte *******/
-
-/* Overlay */
-.overlay-image .hover {
- position: absolute;
- top: 0;
- height: 100%;
- width: 100%;
- opacity: 0;
- transition: .5s ease;
-}
-
-/* Apparition overlay sur passage souris */
-.overlay-image:hover .hover {
- opacity: 1;
-}
-
-/********* Hover background et texte uniquement *******/
-
-.overlay-image .normal {
- transition: .5s ease;
-}
-.overlay-image:hover .normal {
- opacity: 0;
-}
-.overlay-image .hover {
- background-color: rgba(0,0,0,0.5);
-}
+  .overlay-image2 .normal {
+  transition: .5s ease;
+  }
+  .overlay-image2:hover .normal {
+  opacity: 0;
+  }
+  .overlay-image2 .hover {
+  background-color: rgba(0,0,0,0.5);
+  }
 
 
 
 
+  .button {
+      background-color: #4CAF50; /* Green */
+      border: none;
+      color: white;
+      padding: 4px 10px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      -webkit-transition-duration: 0.4s; /* Safari */
+      transition-duration: 0.4s;
+      cursor: pointer;
+  }
 
-/********* Superposition simple de texte sur une image *******/
+  .button1 {
+      background-color: #f44336; 
+      color: rgb(255, 255, 255); 
+      border: 2px solid #f44336;
+  }
 
-/* Conteneur principal */
-.overlay-image2 {
- position: relative;
- margin-left: 90%;
- width: 10%;
-}
-
-/* Image originale */
-.overlay-image2 .image {
- display: block;
- width: 100%;
- height: auto;
-}
-
-/* Texte original */
-.overlay-image2 .text {
- color: #fff;
- font-size: 20px;
- line-height: 1.5em;
- text-shadow: 2px 2px 2px rgb(0, 0, 0);
- text-align: center;
- position: absolute;
- top: 50%;
- left: 50%;
- transform: translate(-50%, -50%);
- width: 100%;
-}
+  .button1:hover {
+      background-color: white;
+      color: black;
+  }
 
 
-/********* Hover image et texte *******/
+  .button2 {
+      background-color: #555555;
+      color: white;
+      border: 2px solid #555555;
+  }
 
-/* Overlay */
-.overlay-image2 .hover {
- position: absolute;
- top: 0;
- height: 100%;
- width: 100%;
- opacity: 0;
- transition: .5s ease;
-}
+  .button2:hover {
+      background-color: white;
+      color: black;
+  }
+  .hello{
+    background-image: url('../assets/aaa.jpg');
+    background-size: cover;
+  }
+  
+  #loader {
+    position: sticky;
+    left: 50%;
+    bottom: 37px;
+    animation: redBox 5s infinite;
+  }
 
-/* Apparition overlay sur passage souris */
-.overlay-image2:hover .hover {
- opacity: 1;
-}
-
-/********* Hover background et texte uniquement *******/
-
-.overlay-image2 .normal {
- transition: .5s ease;
-}
-.overlay-image2:hover .normal {
- opacity: 0;
-}
-.overlay-image2 .hover {
- background-color: rgba(0,0,0,0.5);
-}
+  @keyframes redBox {
+    0% {
+      left: 10px;
+    }
+    50% {
+      left: 400px;
+    }
+    100% {
+      left: 10px;
+    }
+  }
 
 
 </style>

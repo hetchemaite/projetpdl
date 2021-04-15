@@ -101,13 +101,13 @@ public class ImageController {
 
     } else if (gain==null && filtersize==null && filter == null && teinte==null){
       if (isVignette == true) {
-        System.out.println(isVignette);
+        System.out.println(imgFile.get().getVignetteData());
         return ResponseEntity
                   .ok()
                   .contentType(MediaType.IMAGE_JPEG)
                   .body(imgFile.get().getVignetteData());
       }
-      
+
       return ResponseEntity
                   .ok()
                   .contentType(MediaType.IMAGE_JPEG)
@@ -127,50 +127,64 @@ public class ImageController {
     return new ResponseEntity<>(HttpStatus.OK);
   }
 
+  @RequestMapping(value = "/images/{id}", method = RequestMethod.POST)
+  public ResponseEntity<?> addImage(@PathVariable("id") long id,
+                                    @RequestParam("image") MultipartFile file) {
+
+    try {
+      System.out.println(file.getBytes().length);
+      imageDao.changeVignette(file.getBytes(), Long.valueOf(id));
+    } catch (final IOException e) {
+      e.printStackTrace();
+    } 
+    return new ResponseEntity<>(HttpStatus.OK);
+
+  }
+
   @RequestMapping(value = "/images", method = RequestMethod.POST)
   public ResponseEntity<?> addImage(@RequestParam("file") MultipartFile file,
-      RedirectAttributes redirectAttributes) {
-      try {
-        final ClassPathResource imgFile = new ClassPathResource(file.getOriginalFilename());
-        BufferedImage buffImg = ImageIO.read(imgFile.getFile());
-        int[] filedims = {buffImg.getWidth(),buffImg.getHeight()};
-        float[] vignetteMaxDims = {110,50};
-        int[] vignetteDims = {0,0};
+                                    RedirectAttributes redirectAttributes) {
+        try {
+          final ClassPathResource imgFile = new ClassPathResource(file.getOriginalFilename());
+          BufferedImage buffImg = ImageIO.read(imgFile.getFile());
+          int[] filedims = {buffImg.getWidth(),buffImg.getHeight()};
+          float[] vignetteMaxDims = {110,50};
+          int[] vignetteDims = {0,0};
 
-        if (filedims[0]/vignetteMaxDims[0] > filedims[1]/vignetteMaxDims[1]) {
-          vignetteDims[0]= (int) vignetteMaxDims[0];
-          vignetteDims[1] = (int) (filedims[1] * (vignetteMaxDims[0]/filedims[0]));
-        } else {
-          vignetteDims[1]=(int) vignetteMaxDims[1];
-          System.out.println(filedims[0]);
-          System.out.println(vignetteMaxDims[1]/filedims[1]);
-          vignetteDims[0] = (int) (filedims[0] * (vignetteMaxDims[1]/filedims[1]));
+          if (filedims[0]/vignetteMaxDims[0] > filedims[1]/vignetteMaxDims[1]) {
+            vignetteDims[0]= (int) vignetteMaxDims[0];
+            vignetteDims[1] = (int) (filedims[1] * (vignetteMaxDims[0]/filedims[0]));
+          } else {
+            vignetteDims[1]=(int) vignetteMaxDims[1];
+            System.out.println(filedims[0]);
+            System.out.println(vignetteMaxDims[1]/filedims[1]);
+            vignetteDims[0] = (int) (filedims[0] * (vignetteMaxDims[1]/filedims[1]));
+          }
+          System.out.println("" + vignetteDims[0]+"    "+ vignetteDims[1]);
+
+          BufferedImage vignette = new BufferedImage((int) vignetteDims[0],(int) vignetteDims[1] , buffImg.getType());
+
+          Graphics2D g = vignette.createGraphics();
+
+          g.drawImage(buffImg, 0, 0,(int) vignetteDims[0],(int) vignetteDims[1], null);
+          g.dispose();
+          
+          ByteArrayOutputStream baos = new ByteArrayOutputStream();
+          
+          ImageIO.write(vignette, Files.probeContentType(imgFile.getFile().toPath()).substring(6), baos);
+          byte[] vignetteData = baos.toByteArray();
+
+          Image img = new Image(file.getOriginalFilename(),
+                                file.getBytes(),
+                                filedims,
+                                new org.springframework.http.MediaType(file.getContentType().substring(6)),
+                                vignetteData);
+
+          imageDao.create(img);
+        } catch (final IOException e) {
+          e.printStackTrace();
         }
-        System.out.println("" + vignetteDims[0]+"    "+ vignetteDims[1]);
-
-        BufferedImage vignette = new BufferedImage((int) vignetteDims[0],(int) vignetteDims[1] , buffImg.getType());
-
-        Graphics2D g = vignette.createGraphics();
-
-        g.drawImage(buffImg, 0, 0,(int) vignetteDims[0],(int) vignetteDims[1], null);
-        g.dispose();
-        
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        
-        ImageIO.write(vignette, Files.probeContentType(imgFile.getFile().toPath()).substring(6), baos);
-        byte[] vignetteData = baos.toByteArray();
-
-        Image img = new Image(file.getOriginalFilename(),
-                              file.getBytes(),
-                              filedims,
-                              new org.springframework.http.MediaType(file.getContentType().substring(6)),
-                              vignetteData);
-
-        imageDao.create(img);
-      } catch (final IOException e) {
-        e.printStackTrace();
-      }
-    return new ResponseEntity<>(HttpStatus.OK);
+      return new ResponseEntity<>(HttpStatus.OK);
   }
 
   @RequestMapping(value = "/images", method = RequestMethod.GET, produces = "application/json; charset=UTF-8")

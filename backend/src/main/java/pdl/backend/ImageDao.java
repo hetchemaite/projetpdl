@@ -44,7 +44,7 @@ public class ImageDao implements Dao<Image> {
     org.springframework.http.MediaType filetype;
 
     try {
-      
+
       BufferedImage buffImg = ImageIO.read(imgFile.getFile());
 
       int[] filedims = {buffImg.getWidth(),buffImg.getHeight()};
@@ -97,6 +97,11 @@ public class ImageDao implements Dao<Image> {
     return Optional.of(images.get(id));
   }
 
+  public void changeVignette(final byte[] data, long id) {
+    System.out.println("id :" + id + " data : " + data.length);
+    images.get(id).setVignetteData(data);
+  }
+
   @Override
   public List<Image> retrieveAll() {
     List<Image> imgs = new ArrayList<>();
@@ -110,8 +115,10 @@ public class ImageDao implements Dao<Image> {
     images.put(img.getId(), img);
   }
 
+
   @Override
   public void update(final Image img, final String[] params) throws FormatException,IOException,BadArguments {
+    //System.out.println(img.getVignetteData());
     try {
       SCIFIOImgPlus<UnsignedByteType> imgbyte = ImageConverter.imageFromJPEGBytes(img.getData());
       switch (params[0]) {
