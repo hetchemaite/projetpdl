@@ -1,8 +1,10 @@
 <template>
-  <div id="nav">
-
+  <div  id="nav">
+    <a> Bienvenue sur votre éditeur photo en ligne. </a>
+    <a class="design" title=":)" >by CeZaHe.</a>
   </div>
   <router-view/>
+  
 </template>
 
 <style>
@@ -15,7 +17,8 @@
 }
 
 #nav {
-  padding: 30px;
+  padding: 10px;
+  background-color:slategrey;
 }
 
 #nav a {
@@ -25,5 +28,15 @@
 
 #nav a.router-link-exact-active {
   color: #42b983;
+}
+.design{
+    float:right;
+    cursor:cell;
+}
+
+
+.design:hover{
+  
+    background-color:red;
 }
 </style>
