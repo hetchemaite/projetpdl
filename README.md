@@ -1,4 +1,5 @@
 # projet-pdl
+ATTENTION : Le projet se lance sur le port 8081 coté serveur
 
 1. Améliorations graphiques (boutons, background, effet "hover" sur la galerie).
 
