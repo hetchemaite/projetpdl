@@ -59,7 +59,6 @@ public class ImageController {
     Optional<Image> imgFile = imageDao.retrieve(id);
 
     if (imgFile.isEmpty()) {
-      //System.out.print("YOUHOU");
       return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
     String[] params = {null,null,null};
@@ -69,7 +68,6 @@ public class ImageController {
         params[0] = algorithm;
         params[1] = gain;
       } else if (gain==null && filtersize!=null && filter != null && teinte==null) {
-        //System.out.println("c'est pas la");
         params[0] = algorithm;
         params[1] = filter;
         params[2] = filtersize;
@@ -101,7 +99,6 @@ public class ImageController {
 
     } else if (gain==null && filtersize==null && filter == null && teinte==null){
       if (isVignette == true) {
-        System.out.println(imgFile.get().getVignetteData());
         return ResponseEntity
                   .ok()
                   .contentType(MediaType.IMAGE_JPEG)
@@ -122,23 +119,32 @@ public class ImageController {
 
   @RequestMapping(value = "/images/{id}", method = RequestMethod.DELETE)
   public ResponseEntity<?> deleteImage(@PathVariable("id") long id) {
-    //System.out.println(id);
-    imageDao.delete(imageDao.retrieve(id).get());
-    return new ResponseEntity<>(HttpStatus.OK);
+    
+      imageDao.delete(imageDao.retrieve(id).get());
+      return new ResponseEntity<>(HttpStatus.OK);
+   
   }
 
   @RequestMapping(value = "/images/{id}", method = RequestMethod.POST)
   public ResponseEntity<?> addImage(@PathVariable("id") long id,
-                                    @RequestParam("image") MultipartFile file) {
+                                    @RequestParam(name= "image", required = false) MultipartFile image,
+                                    @RequestParam(name="vignettedata", required = false) MultipartFile vignette,
+                                    @RequestParam(name="vignette", required = false) boolean isVignette) {
+    if (isVignette==true) {
+      try {
+        imageDao.changeVignette(vignette.getBytes(), Long.valueOf(id));
 
-    try {
-      System.out.println(file.getBytes().length);
-      imageDao.changeVignette(file.getBytes(), Long.valueOf(id));
-    } catch (final IOException e) {
-      e.printStackTrace();
-    } 
+      } catch (final IOException e) {
+        e.printStackTrace();
+      }
+    } else {
+      try {
+        imageDao.rewrite(image.getBytes(), id);
+      } catch (final IOException e) {
+        e.printStackTrace();
+      }
+    }
     return new ResponseEntity<>(HttpStatus.OK);
-
   }
 
   @RequestMapping(value = "/images", method = RequestMethod.POST)
@@ -156,11 +162,8 @@ public class ImageController {
             vignetteDims[1] = (int) (filedims[1] * (vignetteMaxDims[0]/filedims[0]));
           } else {
             vignetteDims[1]=(int) vignetteMaxDims[1];
-            System.out.println(filedims[0]);
-            System.out.println(vignetteMaxDims[1]/filedims[1]);
             vignetteDims[0] = (int) (filedims[0] * (vignetteMaxDims[1]/filedims[1]));
           }
-          System.out.println("" + vignetteDims[0]+"    "+ vignetteDims[1]);
 
           BufferedImage vignette = new BufferedImage((int) vignetteDims[0],(int) vignetteDims[1] , buffImg.getType());
 
@@ -192,14 +195,12 @@ public class ImageController {
   public ArrayNode getImageList() {
     ArrayNode nodes = mapper.createArrayNode();
     List<Image> imgs = imageDao.retrieveAll();
-    //System.out.println(imgs);
     imgs.forEach(image -> {
       nodes.addObject().put("id", image.getId()).put("name", image.getName());
     });
 
     
 
-    //System.out.println(nodes);
     return nodes;
   }
 

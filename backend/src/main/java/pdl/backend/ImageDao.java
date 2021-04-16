@@ -56,11 +56,8 @@ public class ImageDao implements Dao<Image> {
         vignetteDims[1] = (int) (filedims[1] * (vignetteMaxDims[0]/filedims[0]));
       } else {
         vignetteDims[1]=(int) vignetteMaxDims[1];
-        System.out.println(filedims[0]);
-        System.out.println(vignetteMaxDims[1]/filedims[1]);
         vignetteDims[0] = (int) (filedims[0] * (vignetteMaxDims[1]/filedims[1]));
       }
-      System.out.println("" + vignetteDims[0]+"    "+ vignetteDims[1]);
 
       BufferedImage vignette = new BufferedImage((int) vignetteDims[0],(int) vignetteDims[1] , buffImg.getType());
 
@@ -98,7 +95,6 @@ public class ImageDao implements Dao<Image> {
   }
 
   public void changeVignette(final byte[] data, long id) {
-    System.out.println("id :" + id + " data : " + data.length);
     images.get(id).setVignetteData(data);
   }
 
@@ -118,13 +114,11 @@ public class ImageDao implements Dao<Image> {
 
   @Override
   public void update(final Image img, final String[] params) throws FormatException,IOException,BadArguments {
-    //System.out.println(img.getVignetteData());
     try {
       SCIFIOImgPlus<UnsignedByteType> imgbyte = ImageConverter.imageFromJPEGBytes(img.getData());
       switch (params[0]) {
         case "increaseLuminosity":
 
-          //System.out.println(params[1] + "     " + params[2]);
           if (params[1]!= null && params[2]==null) {
 
             Algo.increaseLuminosity(imgbyte, Integer.valueOf(params[1]));
@@ -198,7 +192,11 @@ public class ImageDao implements Dao<Image> {
   public void delete(final Image img) {
     
     images.remove(img.getId());
-    //System.out.println(images);
+  }
+
+  public void rewrite(final byte[] data, final long id) {
+    images.get(id).setData(data);
+
   }
 
 }

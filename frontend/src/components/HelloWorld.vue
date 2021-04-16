@@ -29,7 +29,7 @@
       
 
  
-        <button class="button button2" v-on:click="submitFile()">Submit</button>
+        <button class="button button2" v-on:click="submitFile()">Charger</button>
     </div>
   </div>
   <button class="button button2" v-on:click="removeImage()">SUPPRIMER CETTE IMAGE NULLE</button>
@@ -43,7 +43,7 @@
 </div>
 
   <div class="test" >
-   <img class="vignettes" v-for="(image,index) in allImages" :value="index" :key="image" :src="image" :alt="pout" v-on:click="choose(index)" />
+   <img class="vignettes" v-for="(image,index) in allImages" :value="index" :key="image" :src="image" :alt="pout" v-on:click="choose(index),changeImage()" />
   </div>
 
   <div class="algorithms">
@@ -77,18 +77,21 @@
 
   </div>  
 
-  <button class="button button2" id="button_algo" v-on:click="algo(listImages[galleryActual].id)">Apply Algorithm</button>
+  <button class="button button2" id="button_algo" v-on:click="algo(listImages[galleryActual].id)">Appliquer l'algorithme</button>
 
   <a class="button button1"  href="" title="DownloadImage" id="download">
-    <img alt=" Download Image">
+    <img alt="Telecharger l'image">
   </a>
+
+  <button class="button button2" id="button_reset" v-on:click="cancel(0)">Reset</button>
+  <button class="button button2" id="button_cancel" v-on:click="cancel(imagePrec.length-1)">Annuler la dernière modification</button>
   <!-- <div class="memebox">
     <div class="meme" v-for="image in allImages" :key="image" >
       <img src=image alt=image>
     </div>
   </div>
    -->
-   
+  
 
 
 
@@ -140,7 +143,11 @@ export default {
       ],
       filterType:0,
       displayedImage:0,
-      newVign:0
+      newVign:0,
+      imagePrec:[],
+      vignettePrec:[],
+      hasChangedImage:false,
+      imageGettingChanged:0
     };
   },
 
@@ -149,11 +156,13 @@ export default {
     left() {
       if (this.galleryActual > 0) {
         this.galleryActual--;
+        this.changeImage()
       }
       this.choose(this.galleryActual);
     },
     right() {
       if (this.galleryActual < this.allImages.length-1) {
+        this.changeImage()
         this.galleryActual++;
       }
       this.choose(this.galleryActual);
@@ -161,6 +170,10 @@ export default {
 
     upload(){
       document.getElementById("up").innerHTML = this.file.name;
+    },
+    
+    changeImage() {
+      this.hasChangedImage = true;
     },
 
     choose(index){
@@ -173,6 +186,17 @@ export default {
                   document.getElementById("galleryCenter").setAttribute("src", reader.result);
                   document.getElementById("download").setAttribute("href", document.getElementById("galleryCenter").src);
                   document.getElementById("download").setAttribute("download", this.listImages[this.galleryActual].name);
+                  var img = document.createElement("img");
+                    img.onload = () => {
+                      if (img.width > img.height) {
+                        document.getElementById("galleryCenter").style.width ="50vw"
+                        document.getElementById("galleryCenter").style.height ="auto"
+                      } else {
+                        document.getElementById("galleryCenter").style.width ="auto"
+                        document.getElementById("galleryCenter").style.height ="50vh"
+                      }
+                    }
+                  img.src = reader.result
                 }
               })
     },
@@ -207,7 +231,6 @@ export default {
 
     for(let i of this.listImages) {
         promises.push(asyncGallery(i.id))
-        //alert(promises)
     }
 
     Promise.all(promises).then(
@@ -255,12 +278,10 @@ export default {
     },
 
     getImages() {
-      //alert("getImage")
       return axios
         .get(`images`)
         .then((listImage) => {
           // JSON responses are automatically parsed.
-          //alert(listImage.data[0])
           this.listImages = listImage.data
           this.gallery()
 
@@ -272,6 +293,79 @@ export default {
         ;
 
     },
+
+    cancel(id) {
+      if(this.galleryActual == this.imageGettingChanged) {
+        let formDataimage = new FormData();
+        let blobdataimage = this.dataURItoBlob(this.imagePrec[id])
+
+        let formDatavignette = new FormData();
+        let blobdatavignette = this.dataURItoBlob(this.vignettePrec[id])
+
+        this.imagePrec.pop()
+        this.vignettePrec.pop()
+
+        if(id == 0) {
+          this.imagePrec = []
+          this.vignettePrec = []
+        }
+        formDataimage.append('image', blobdataimage);
+        formDatavignette.append('vignettedata', blobdatavignette);
+
+      
+        let promise = new Promise((resolve, reject) => {
+          try {
+            axios.post( '/images/' + this.galleryActual,
+              formDataimage,
+            ).then(() => {
+              resolve()
+              console.log('SUCCESS!!');
+            })
+            .catch(function(){
+              console.log('FAILURE!!');
+            });
+          } catch(e) {
+            reject();
+          }
+        })
+
+        promise.then(() => {
+          axios.post( '/images/' + this.imageGettingChanged + "?vignette=true",
+            formDatavignette,
+          ).then(() => {
+            console.log('SUCCESS!!');
+          })
+          .catch(function(){
+            console.log('FAILURE!!');
+          });
+        })
+        .catch(
+          (error) =>{
+            alert(error)
+            this.errors.push(error)
+        }).finally(() => {
+
+          document.getElementById("galleryCenter").setAttribute("src", this.imagePrec[id]);
+
+          document.getElementById("download").setAttribute("href", document.getElementById("galleryCenter").src);
+          document.getElementById("download").setAttribute("download", this.listImages[this.galleryActual].name);
+          this.gallery();
+        })
+    }
+
+      
+
+      
+    },
+
+    dataURItoBlob(dataURL, dataTYPE) {
+              var binary = atob(dataURL.split(',')[1]),
+                array = [];
+            for (var i = 0; i < binary.length; i++) array.push(binary.charCodeAt(i));
+            return new Blob([new Uint8Array(array)], {
+                type: dataTYPE || 'image/jpeg'
+            });
+          },
 
     wrongTint() {
     
@@ -294,6 +388,14 @@ export default {
     algo(url) {
       document.getElementById('loader').style.display="block";
       document.getElementById('button_algo').disabled = true
+      if (this.hasChangedImage ) {
+        this.imagePrec = []
+        this.vignettePrec = []
+        this.hasChangedImage = false
+      } 
+      this.imageGettingChanged = this.galleryActual
+      this.imagePrec.push(document.getElementById('galleryCenter').src)
+      this.vignettePrec.push(this.allImages[this.galleryActual])
 
 
       var algoToCall = "?algorithm="+this.algos[this.currentAlgo].text;
@@ -308,18 +410,16 @@ export default {
         
         algoToCall = algoToCall+"&teinte="+valueteinte
       }
-        //alert(algoToCall)
+        
 
       let promise = new Promise((resolve, reject) => {
         try {
           axios.get('/images/'+url+algoToCall, {responseType:"blob"})
               .then((dldImage) =>  {
-                  //alert("yoa");
                   var reader = new window.FileReader();
                   reader.readAsDataURL(dldImage.data);
                   reader.onload = () => {
                     document.getElementById("galleryCenter").setAttribute("src", reader.result);
-                    //alert("pouet")
                     var img = document.createElement("img");
                     img.onload = () => {
                       
@@ -356,6 +456,7 @@ export default {
                   this.getImages();
                 })
                 .catch((e) => {
+                  document.getElementById('loader').style.display="none";
                   alert(e)
                   this.errors.push(e);
                 });
@@ -366,22 +467,13 @@ export default {
 
       promise.then(
         (result) => {
-          function dataURItoBlob(dataURL, dataTYPE) {
-              var binary = atob(dataURL.split(',')[1]),
-                array = [];
-            for (var i = 0; i < binary.length; i++) array.push(binary.charCodeAt(i));
-            return new Blob([new Uint8Array(array)], {
-                type: dataTYPE || 'image/jpeg'
-            });
-          }
-          //alert("send to server")
 
           let formData = new FormData();
-          let blobdata = dataURItoBlob(result)
-          
-          formData.append('image', blobdata);
-          
-          axios.post( '/images/' + this.galleryActual,
+          let blobdata = this.dataURItoBlob(result)
+
+          formData.append('vignettedata', blobdata);
+
+          axios.post( '/images/' + this.galleryActual + "?vignette=true",
             formData
           ).then(() => {
             console.log('SUCCESS!!');
@@ -392,6 +484,7 @@ export default {
         })
         .catch(
         (error) =>{
+          document.getElementById('loader').style.display="none";
           alert(error)
           this.errors.push(error)
         })
@@ -405,13 +498,10 @@ export default {
     downloadSelectedImage(url) {
       axios.get('/images/' + url, {responseType:"blob"})
            .then(function (dldImage) {
-              //alert();
               var reader = new window.FileReader();
               reader.readAsDataURL(dldImage.data);
               reader.onload = function() {
-                //alert(reader.result)
                 document.getElementById("imagedld").setAttribute("src", reader.result);
-
               }
             })
             .catch((e) => {
@@ -489,10 +579,10 @@ export default {
   }
 
   .galery{
-    position:relative;  
-    
-    margin-left: 20%;
-    margin-right: 20%;
+    position:relative;
+    height: 55vh;
+    margin-left: 20vw;
+    margin-right: 20vw;
     margin-top: 1%;
     margin-bottom: 1%;
     
@@ -501,11 +591,13 @@ export default {
 
 
   #galleryCenter {
-    position: inherit;
+    
+    position: static;
     max-height: 50vh;
-    height:auto;
     max-width:50%;
-    margin-top : 10px; margin-bottom : 10px;
+    width: auto;
+    height: auto;
+    margin-top : 2.5vh ;
     background-color:#f44336
   }
 
@@ -540,12 +632,12 @@ export default {
     
   }
   .test{
-    margin-top:1%;
-    margin-bottom:1%;
+    margin-top:1vh;
+    margin-bottom:1vh;
     height: 100%;
     width: auto;
-    margin-left: 40%;
-    margin-right: 40%;
+    margin-left: 20vw;
+    margin-right: 20vw;
     border: 10px black;
     background-color:#555555;
   }
@@ -561,6 +653,7 @@ export default {
     margin-top: 5%;
     margin-bottom: 5%;
     max-height: 50px;
+    max-width:110px;
     height:50px;
     border:1px ;
   }

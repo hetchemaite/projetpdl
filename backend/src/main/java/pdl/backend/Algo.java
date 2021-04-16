@@ -263,36 +263,118 @@ public class Algo {
     public static void BorderFilter(Img<UnsignedByteType> input, Img<UnsignedByteType> input2) {
 		final ArrayImgFactory<UnsignedByteType> factory = new ArrayImgFactory<>(new UnsignedByteType());
 		final Dimensions dim = input;
-		final Img<UnsignedByteType> outputConvoH = factory.create(dim);
-		final Img<UnsignedByteType> outputConvoV = factory.create(dim);
-        convertGrey(input);
-		convertGrey(input2);
-        float[][] h = { { -1, -2, -1 }, { 0, 0, 0 }, { 1, 2, 1 } };
-        float[][] v = { { -1, 0, 1 }, { -2, 0, 2 }, { -1, 0, 1 } };
-		convolution(input, outputConvoH, h);
-		convolution(input2, outputConvoV, v);	
-		final Cursor<UnsignedByteType> r = outputConvoH.cursor();
-		final Cursor<UnsignedByteType> r2 = outputConvoV.cursor();
-		final Cursor<UnsignedByteType> w = input.cursor();
-        while (r.hasNext() && r2.hasNext()) {
-            r.fwd();
-			r2.fwd();
-			w.fwd();
-            final UnsignedByteType val = r.get();
-			final UnsignedByteType val2 = r2.get();
-			final UnsignedByteType valw = w.get();
-			double valcarre=val.get()*val.get();
-			double val2carre=val2.get()*val2.get();
-			double m=Math.sqrt(valcarre + val2carre);
-            if (m > 255) {
-                valw.set(255);
-            } else if (m < 0) {
-                valw.set(0);
-            } else {
-                valw.set((int)m);
-            }
-        }
+		final Img<UnsignedByteType> outputConvo = factory.create(dim);
+        convertGrey(input2);
+        int[][] h = { { -1, -2, -1 }, { 0, 0, 0 }, { 1, 2, 1 } };
+        int[][] v = { { -1, 0, 1 }, { -2, 0, 2 }, { -1, 0, 1 } };
+		
+		convolution2(input2, outputConvo, h, v);
+		int iw = (int) input.max(0);
+		int ih = (int) input.max(1);
+		final IntervalView<UnsignedByteType> inputR = Views.hyperSlice(input, 2, 0);
+		final IntervalView<UnsignedByteType> inputG = Views.hyperSlice(input, 2, 1);
+		final IntervalView<UnsignedByteType> inputB = Views.hyperSlice(input, 2, 2);
+		final IntervalView<UnsignedByteType> inputR2 = Views.hyperSlice(outputConvo, 2, 0);
+		final Cursor<UnsignedByteType> cR = inputR.cursor();
+		final Cursor<UnsignedByteType> cG = inputG.cursor();
+		final Cursor<UnsignedByteType> cB = inputB.cursor();
+
+		final Cursor<UnsignedByteType> cR2 = inputR2.cursor();
+		while(cR.hasNext() && cG.hasNext() && cB.hasNext() && cR2.hasNext()){
+			cR.fwd();
+			cG.fwd();
+			cB.fwd();
+			cR2.fwd();
+			final UnsignedByteType valYfinal = cR2.get();
+			int yfinal=valYfinal.get();
+			final UnsignedByteType valR=cR.get();
+			final UnsignedByteType valG=cG.get();
+			final UnsignedByteType valB=cB.get();
+			int valueR=valR.get();
+			int valueG=valG.get();
+			int valueB=valB.get();
+			double y0=(1.0/3.0)*(valueR+valueG+valueB);
+			valR.set((int) (valueR*(yfinal/y0)));
+			valG.set((int) (valueG*(yfinal/y0)));
+			valB.set((int) (valueB*(yfinal/y0)));
+		}
+
+		
+
     }
+
+	public static void convolution2(final Img<UnsignedByteType> input,final Img<UnsignedByteType> output, int[][] kernel, int[][] kernel2 ) {
+		int size=kernel.length;
+		final IntervalView<UnsignedByteType> inputR = Views.hyperSlice(input, 2, 0);
+		final IntervalView<UnsignedByteType> inputG = Views.hyperSlice(input, 2, 1);
+		final IntervalView<UnsignedByteType> inputB = Views.hyperSlice(input, 2, 2);
+		final IntervalView<UnsignedByteType> expandedViewR = Views.expandMirrorDouble(inputR, size/2, size/2 );
+		final IntervalView<UnsignedByteType> expandedViewG = Views.expandMirrorDouble(inputG, size/2, size/2 );
+		final IntervalView<UnsignedByteType> expandedViewB = Views.expandMirrorDouble(inputB, size/2, size/2 );
+		final RandomAccess<UnsignedByteType> r = input.randomAccess();
+		final RandomAccess<UnsignedByteType> w = output.randomAccess();
+
+		int iw = (int) input.max(0);
+		int ih = (int) input.max(1);
+		for (int x = 1; x <= iw-1; ++x) {
+			for (int y = 1; y <= ih-1; ++y) {
+			double v=0;
+			double m=0;
+			int i=0;
+			int j=0;
+			double vR=0;
+			double vG=0;
+			double vB=0;
+			double mR=0;
+			double mG=0;
+			double mB=0;
+			RandomAccessibleInterval< UnsignedByteType > convolutionR = Views.interval( expandedViewR, new long[] { x-size/2, y-size/2 }, new long[]{ x+size/2, y+size/2} );
+			RandomAccessibleInterval< UnsignedByteType > convolutionG = Views.interval( expandedViewG, new long[] { x-size/2, y-size/2 }, new long[]{ x+size/2, y+size/2} );
+			RandomAccessibleInterval< UnsignedByteType > convolutionB = Views.interval( expandedViewB, new long[] { x-size/2, y-size/2 }, new long[]{ x+size/2, y+size/2} );
+
+			final Cursor<UnsignedByteType> cR = Views.iterable(convolutionR).cursor();
+			final Cursor<UnsignedByteType> cG = Views.iterable(convolutionG).cursor();
+			final Cursor<UnsignedByteType> cB = Views.iterable(convolutionB).cursor();
+			while(cR.hasNext() && cG.hasNext() && cB.hasNext()){
+				cR.fwd();
+				cG.fwd();
+				cB.fwd();
+				final UnsignedByteType valR = cR.get();
+				final UnsignedByteType valG = cG.get();
+				final UnsignedByteType valB = cB.get();
+				vR=vR+valR.get()*kernel[i/size][i%size];
+				vG=vG+valG.get()*kernel[i/size][i%size];
+				vB=vB+valB.get()*kernel[i/size][i%size];
+				i++;
+				mR=mR+valR.get()*kernel2[j/size][j%size];
+				mG=mG+valG.get()*kernel2[j/size][j%size];
+				mB=mB+valB.get()*kernel2[j/size][j%size];
+				j++;
+			}
+			double coeff=255/(Math.sqrt(2)*1020);
+			double nR=Math.sqrt(vR*vR + mR*mR);
+			nR=nR*coeff;
+			double nG=Math.sqrt(vG*vG + mG*mG);
+			nG=nG*coeff;
+			double nB=Math.sqrt(vB*vB + mB*mB);
+			nB=nB*coeff;
+			w.setPosition(x, 0);
+			w.setPosition(y, 1);
+			w.setPosition(0, 2);
+			final UnsignedByteType valR2=w.get();
+			valR2.set((int) nR);
+
+			w.setPosition(1, 2);
+			final UnsignedByteType valG2=w.get();
+			valG2.set((int) nG);
+
+			w.setPosition(2, 2);
+			final UnsignedByteType valB2=w.get();
+			valB2.set((int) nB);
+		}
+	}
+
+}
 
 
 
